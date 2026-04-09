@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --muted: #64748b;
+            --header: #0f172a;
+            --accent: #14b8a6;
+            --accent-dark: #0d9488;
+            --border: #e2e8f0;
+        }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        .bento-grid {
+            display: grid;
+            gap: 1.5rem;
+            grid-template-columns: 1fr;
+            padding-bottom: 4rem;
+        }
+        .bento-item {
+            background: var(--card);
+            border-radius: 1rem;
+            padding: 1.75rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(15,23,42,0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .bento-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(15,23,42,0.12);
+        }
+        .paper-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 0.75rem;
+        }
+        .paper-summary {
+            font-size: 0.875rem;
+            color: var(--muted);
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        .paper-tldr {
+            font-size: 0.95rem;
+            color: #475569;
+            margin: 0.75rem 0;
+            font-weight: bold;
+        }
+        .paper-link {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--accent);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            background: rgba(20,184,166,0.08);
+            border: 1px solid rgba(20,184,166,0.2);
+            transition: all 0.3s;
+        }
+        .paper-link:hover {
+            background: rgba(20,184,166,0.15);
+            color: var(--accent-dark);
+        }
+        .paper-authors {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-top: 1rem;
+            font-style: italic;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-top: 3rem;
+        }
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--header);
+            margin-bottom: 0.5rem;
+        }
+        .header p {
+            font-size: 1.125rem;
+            color: var(--muted);
+        }
+        .line-graphic {
+            height: 1px;
+            background: linear-gradient(90deg, rgba(20,184,166,0), var(--accent), rgba(20,184,166,0));
+            opacity: 0.6;
+            margin: 1.5rem auto;
+            width: 33%;
+        }
+        .rating-stars {
+            color: #f59e0b;
+        }
+        /* Top Cited Papers Section */
+        .top-cited-section {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .top-cited-section h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .top-cited-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+        .top-cited-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            font-weight: 600;
+            color: #94a3b8;
+        }
+        .top-cited-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .top-cited-table tr:hover td {
+            background: rgba(255,255,255,0.05);
+        }
+        .top-cited-table a {
+            color: #67e8f9;
+            text-decoration: none;
+        }
+        .top-cited-table a:hover {
+            text-decoration: underline;
+        }
+        .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.75rem;
+            height: 1.75rem;
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 0.875rem;
+        }
+        .rank-1 { background: #fbbf24; color: #1e293b; }
+        .rank-2 { background: #94a3b8; color: #1e293b; }
+        .rank-3 { background: #cd7f32; color: #1e293b; }
+        .rank-other { background: #475569; color: white; }
+        .footer {
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.875rem;
+            padding: 2rem;
+            border-top: 1px solid var(--border);
+            margin-top: 4rem;
+        }
+        .section-divider {
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent), #67e8f9);
+            margin: 3rem 0;
+            border-radius: 1px;
+        }
+    </style>
+</head>
+<body class="container mx-auto px-4 antialiased">
+
+    <div class="header">
+        <h1>🎧 Audio/Speech AI Daily Papers</h1>
+        <p>Daily papers on Audio LLM, Speech Synthesis, Perception & Omni Models</p>
+        <p>{{ report_date.strftime('%B %d, %Y') }}</p>
+        <div class="line-graphic"></div>
+    </div>
+
+    {% if top_cited_papers %}
+    <div class="top-cited-section">
+        <h2><i class="fas fa-trophy"></i> Top 10 Most Cited Papers (2025-2026)</h2>
+        <div class="overflow-x-auto">
+            <table class="top-cited-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">Rank</th>
+                        <th>Title</th>
+                        <th style="width: 150px;">Authors</th>
+                        <th style="width: 80px;">Year</th>
+                        <th style="width: 80px;">Citations</th>
+                        <th style="width: 100px;">Venue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for paper in top_cited_papers %}
+                    <tr>
+                        <td>
+                            {% if paper.rank == 1 %}
+                            <span class="rank-badge rank-1">{{ paper.rank }}</span>
+                            {% elif paper.rank == 2 %}
+                            <span class="rank-badge rank-2">{{ paper.rank }}</span>
+                            {% elif paper.rank == 3 %}
+                            <span class="rank-badge rank-3">{{ paper.rank }}</span>
+                            {% else %}
+                            <span class="rank-badge rank-other">{{ paper.rank }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ paper.url }}" target="_blank">{{ paper.title }}</a>
+                            {% if paper.summary %}
+                            <br><small style="color: #94a3b8;">{{ paper.summary[:100] }}...</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ paper.authors }}</td>
+                        <td>{{ paper.year }}</td>
+                        <td><i class="fas fa-quote-left" style="color: #fbbf24;"></i> {{ paper.citations }}</td>
+                        <td>{{ paper.venue }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="section-divider"></div>
+
+    <div class="bento-grid" id="paper-grid">
+        {% for paper in papers %}
+        <div class="bento-item">
+            <h2 class="paper-title">{{ paper.title }}</h2>
+            <p class="paper-summary">{{ paper.summary }}</p>
+            {% if paper.tldr %}
+            <p class="paper-tldr"><strong>TLDR</strong>: {{ paper.tldr }}</p>
+            {% endif %}
+
+            {% if paper.relevance_score is defined and paper.relevance_score is not none %}
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; font-size: 0.8em;">
+                <div>
+                    <span style="color: #64748b;">Relevance:</span>
+                    {% set score = paper.relevance_score / 2 %}
+                    {% for i in range(5) %}{% if score >= i + 1 %}<i class="fas fa-star rating-stars"></i>{% elif score >= i + 0.5 %}<i class="fas fa-star-half-alt rating-stars"></i>{% else %}<i class="far fa-star" style="color: #ccc;"></i>{% endif %}{% endfor %}
+                </div>
+                <div>
+                    <span style="color: #64748b;">Novelty:</span>
+                    {% set score = paper.novelty_score / 2 if paper.novelty_score is defined else 0 %}
+                    {% for i in range(5) %}{% if score >= i + 1 %}<i class="fas fa-star rating-stars"></i>{% elif score >= i + 0.5 %}<i class="fas fa-star-half-alt rating-stars"></i>{% else %}<i class="far fa-star" style="color: #ccc;"></i>{% endif %}{% endfor %}
+                </div>
+                <div>
+                    <span style="color: #64748b;">Clarity:</span>
+                    {% set score = paper.clarity_score / 2 if paper.clarity_score is defined else 0 %}
+                    {% for i in range(5) %}{% if score >= i + 1 %}<i class="fas fa-star rating-stars"></i>{% elif score >= i + 0.5 %}<i class="fas fa-star-half-alt rating-stars"></i>{% else %}<i class="far fa-star" style="color: #ccc;"></i>{% endif %}{% endfor %}
+                </div>
+                <div>
+                    <span style="color: #64748b;">Impact:</span>
+                    {% set score = paper.impact_score / 2 if paper.impact_score is defined else 0 %}
+                    {% for i in range(5) %}{% if score >= i + 1 %}<i class="fas fa-star rating-stars"></i>{% elif score >= i + 0.5 %}<i class="fas fa-star-half-alt rating-stars"></i>{% else %}<i class="far fa-star" style="color: #ccc;"></i>{% endif %}{% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if paper.overall_priority_score is defined and paper.overall_priority_score is not none %}
+            <div style="margin-bottom: 1rem;">
+                <span style="color: #1e293b; font-weight: bold;">Overall:</span>
+                {% set score = paper.overall_priority_score / 2 %}
+                {% for i in range(5) %}
+                    {% if score >= i + 1 %}<i class="fas fa-star rating-stars"></i>
+                    {% elif score >= i + 0.5 %}<i class="fas fa-star-half-alt rating-stars"></i>
+                    {% else %}<i class="far fa-star" style="color: #ccc;"></i>{% endif %}
+                {% endfor %}
+                <span style="color: #64748b; font-size: 0.75rem; margin-left: 4px;">({{ paper.overall_priority_score }}/10)</span>
+            </div>
+            {% endif %}
+
+            <a href="{{ paper.url }}" target="_blank" class="paper-link">
+                <i class="fas fa-file-pdf"></i> Read Paper
+            </a>
+            {% if paper.authors %}
+            <p class="paper-authors">Authors: {{ paper.authors | join(', ') }}</p>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="bento-item text-center text-gray-500 col-span-full">
+            <p>No relevant papers found for today.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <footer class="footer">
+        Generated on {{ generation_time.strftime('%Y-%m-%d %H:%M:%S') }} UTC | Audio/Speech AI Daily
+    </footer>
+
+</body>
+</html>

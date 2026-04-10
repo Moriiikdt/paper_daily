@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""
-Unified fetch + filter + rate + generate pipeline.
-Features:
-  - Batched LLM calls (5 for filter, 3 for rate) to minimize API calls
-  - Exponential backoff retry on 429 / 5xx errors
-  - Per-call delay to respect rate limits
-  - 2-month data retention
-  - English TLDR only
-"""
+"""Unified fetch + filter + rate + generate pipeline."""
 
 import os, sys, json, time, logging, arxiv, requests
 from datetime import date, datetime, timedelta, timezone
@@ -17,20 +9,19 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 log = logging.getLogger("pipeline")
 
 # ── Config ───────────────────────────────────────────────────────────────────
-OPENAI_API_KEY    = os.getenv("OPENAI_API_KEY")
-# The gateway requires /v1/chat/completions path
+OPENAI_API_KEY      = os.getenv("OPENAI_API_KEY")
+# The gateway needs /v1/ prefix
 OPENAI_API_BASE_URL = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1").rstrip("/")
 OPENAI_API_URL      = f"{OPENAI_API_BASE_URL}/chat/completions"
-OPENAI_MODEL     = os.getenv("OPENAI_MODEL", "gpt-5.4")
+OPENAI_MODEL        = os.getenv("OPENAI_MODEL", "gpt-5.4")
 
-# --- OLD (to be replaced) ---, "https://api.openai.com/v1").rstrip("/")
 PROJECT_ROOT     = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 JSON_DIR         = os.path.join(PROJECT_ROOT, "daily_json")
 HTML_DIR         = os.path.join(PROJECT_ROOT, "daily_html")
 TEMPLATE_DIR     = os.path.join(PROJECT_ROOT, "templates")
 TEMPLATE_NAME    = "paper_template.html"
 REPORTS_PATH     = os.path.join(PROJECT_ROOT, "reports.json")
-DATA_RETENTION   = 60   # days = 2 months
+DATA_RETENTION   = 60   # days
 
 TARGET_CATEGORIES = ["cs.CL", "cs.AI", "cs.LG", "cs.SD", "eess.AS", "cs.MM", "cs.CV"]
 
@@ -41,29 +32,7 @@ RESEARCH_TOPICS = """The user is interested in papers related to:
 4. Speech Synthesis (Text-to-Speech, Voice conversion, Speech generation)
 5. Omni Models (any-domain Omni models, unified multimodal models that include audio)"""
 
-# ── Model auto-detection ─────────────────────────────────────────────────────
-
-def detect_model() -> str:
-    """Try known model names; return first that responds successfully."""
-    candidates = ["gpt-5.4", "gpt-5.4-mini", "gpt-5", "gpt-4o"]
-    test_payload = {
-        "model": "__test__",
-        "messages": [{"role": "user", "content": "Reply OK"}],
-        "max_tokens": 5,
-    }
-    for name in candidates:
-        test_payload["model"] = name
-        try:
-            resp = requests.post(OPENAI_API_URL, headers=headers, json=data, timeout=15)
-            if resp.status_code == 200:   # Only accept 200 OK
-                log.info(f"Using model: {name}")
-                return name
-        except Exception:
-            pass
-    log.warning("Could not auto-detect model — defaulting to gpt-4")
-    return "gpt-4"
-
-# ── LLM caller with retry & backoff ─────────────────────────────────────────
+# ── LLM caller ────────────────────────────────────────────────────────────────
 
 def llm_call(prompt: str,
              max_tokens: int = 200,
@@ -77,19 +46,24 @@ def llm_call(prompt: str,
         "Authorization": f"Bearer {OPENAI_API_KEY}",
         "Content-Type": "application/json",
     }
-    data = {
+    payload = {
+        "model": OPENAI_MODEL,
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": max_tokens,
+        "temperature": temperature,
+    }
 
     for attempt, wait in enumerate([0] + list(retry_backoff)):
         if wait > 0:
-            log.info(f"  Waiting {wait}s before retry {attempt+1}...")
+            log.info(f"  Retry {attempt+1} after {wait}s...")
             time.sleep(wait)
         try:
-            resp = requests.post(OPENAI_API_URL, headers=headers, json=data, timeout=120)
+            resp = requests.post(OPENAI_API_URL, headers=headers, json=payload, timeout=120)
             if resp.status_code == 429:
-                log.warning(f"  429 rate limit — will retry")
+                log.warning("  429 rate limit")
                 continue
             if resp.status_code >= 500:
-                log.warning(f"  Server error {resp.status_code} — will retry")
+                log.warning(f"  Server error {resp.status_code}")
                 continue
             if resp.status_code != 200:
                 log.warning(f"  HTTP {resp.status_code}: {resp.text[:200]}")
@@ -97,51 +71,49 @@ def llm_call(prompt: str,
             result = resp.json()
             content = result.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
             if not content:
-                log.warning("  Empty response from API")
+                log.warning("  Empty response")
                 return None
             return content
         except requests.exceptions.Timeout:
-            log.warning(f"  Timeout — retry {attempt+1}")
+            log.warning(f"  Timeout")
         except Exception as e:
-            log.warning(f"  Request error: {e}")
+            log.warning(f"  Error: {e}")
     log.error("All retries exhausted")
     return None
 
 
-# ── Step 1: Fetch ────────────────────────────────────────────────────────────
+# ── Step 1: Fetch papers ─────────────────────────────────────────────────────
 
 def fetch_papers(specified_date: date) -> list:
     end_dt   = datetime.combine(specified_date, datetime.min.time()) - timedelta(hours=6)
     start_dt = end_dt - timedelta(days=3)
     start_str, end_str = start_dt.strftime("%Y%m%d%H%M"), end_dt.strftime("%Y%m%d%H%M")
+    log.info(f"Fetching {start_str} -> {end_str}")
 
-    log.info(f"Fetching {start_str} → {end_str}")
     client = arxiv.Client()
     all_papers, seen = [], set()
-
     for cat in TARGET_CATEGORIES:
         query = f"cat:{cat} AND submittedDate:[{start_str} TO {end_str}]"
         try:
             search = arxiv.Search(query=query, max_results=300,
-                                  sort_by=arxiv.SortCriterion.SubmittedDate)
+                                   sort_by=arxiv.SortCriterion.SubmittedDate)
             cnt = 0
             for r in client.results(search):
                 if r.entry_id not in seen:
                     seen.add(r.entry_id)
                     all_papers.append({
-                        "title":         r.title,
-                        "summary":       r.summary.strip(),
-                        "url":           r.entry_id,
+                        "title":          r.title,
+                        "summary":        r.summary.strip(),
+                        "url":            r.entry_id,
                         "published_date": r.published.isoformat(),
-                        "updated_date":    r.updated.isoformat(),
-                        "categories":   r.categories,
-                        "authors":       [a.name for a in r.authors],
+                        "updated_date":   r.updated.isoformat(),
+                        "categories":     r.categories,
+                        "authors":        [a.name for a in r.authors],
                     })
                     cnt += 1
             log.info(f"  {cat}: +{cnt}")
         except Exception as e:
             log.warning(f"  {cat}: {e}")
-
     log.info(f"Total unique: {len(all_papers)}")
     return all_papers
 
@@ -151,10 +123,8 @@ def fetch_papers(specified_date: date) -> list:
 def filter_papers(papers: list) -> list:
     if not OPENAI_API_KEY: return papers
     if not papers: return []
-
     BATCH = 5
     filtered = []
-
     for i in range(0, len(papers), BATCH):
         batch = papers[i : i + BATCH]
         lines = [
@@ -167,7 +137,6 @@ Reply ONLY with the numbers of papers that match, separated by commas.
 Example: 1, 3, 5
 
 {chr(10).join(lines)}"""
-
         resp = llm_call(prompt, max_tokens=30)
         matched = set()
         if resp:
@@ -176,27 +145,26 @@ Example: 1, 3, 5
                     matched.add(i + int(tok.strip()) - 1)
                 except ValueError:
                     pass
-
         for j, p in enumerate(batch):
             idx = i + j
-            ok  = idx in matched
+            ok = idx in matched
             log.info(f"  [{idx+1}/{len(papers)}] {'✓' if ok else '✗'} {p['title'][:50]}...")
             if ok:
                 filtered.append(p)
-
+        time.sleep(0.5)
     log.info(f"Filter: {len(filtered)}/{len(papers)} passed")
     return filtered
 
 
-# ── Step 3: Rate (batches of 3) ───────────────────────────────────────────────
+# ── Step 3: Rate (batches of 3, max 30 papers) ───────────────────────────────
 
-RATING_TMPL = """You are an expert reviewer. For each paper below, output a JSON array with one object per paper, in order.
+RATING_TMPL = """You are an expert reviewer. Output a JSON array with one object per paper.
 
 Research interests: Audio LLM, Audio/Speech Perception & Understanding, Speech Synthesis, Omni Models
 
 {papers_block}
 
-Output a single JSON array (no markdown):
+Single JSON array (no markdown):
 [
   {{"idx":1,"tldr":"...","relevance_score":8,"novelty_score":7,"clarity_score":8,"impact_score":9,"overall_priority_score":8}},
   ... (one per paper)
@@ -209,12 +177,9 @@ ITEMS_TMPL = "Paper {i}: Title: {title}\nAbstract: {abstract}"
 def rate_papers(papers: list) -> list:
     if not OPENAI_API_KEY: return papers
     if not papers: return []
-
+    papers = papers[:30]   # cap to avoid runaway API calls
     BATCH = 3
-    # Cap at 30 papers to avoid excessive API calls
-    papers = papers[:30]
     rated = []
-
     for i in range(0, len(papers), BATCH):
         batch = papers[i : i + BATCH]
         block = "\n\n".join(
@@ -222,7 +187,6 @@ def rate_papers(papers: list) -> list:
             for j, p in enumerate(batch)
         )
         resp = llm_call(RATING_TMPL.format(papers_block=block), max_tokens=1500)
-
         if resp:
             try:
                 cleaned = resp
@@ -235,7 +199,6 @@ def rate_papers(papers: list) -> list:
             except (json.JSONDecodeError, KeyError) as e:
                 log.warning(f"  Batch {(i//BATCH)+1}: parse error ({e})")
                 ok = False
-
             if ok:
                 for j, p in enumerate(batch):
                     info = smap.get(i + j + 1, {})
@@ -253,15 +216,12 @@ def rate_papers(papers: list) -> list:
         else:
             for p in batch:
                 p.setdefault("tldr", ""); p.setdefault("overall_priority_score", 5)
-
         rated.extend(batch)
-        # Delay between batches to respect rate limits
         time.sleep(1.5)
-
     return rated
 
 
-# ── Step 4: Top cited papers ──────────────────────────────────────────────────
+# ── Step 4: Top cited papers ────────────────────────────────────────────────
 
 TOP_CITED = """# Identify TOP 10 most cited papers from 2025-2026 related to:
 1. Audio Large Language Models / Audio Foundation Models
@@ -274,13 +234,12 @@ Output a strict JSON array (no markdown):
   {{"rank":1,"title":"...","authors":"...","year":2025,"citations":1200,"venue":"arXiv","url":"https://...","summary":"..."}},
   ... (9 more)
 ]
-Only 2025 or 2026 papers. Most cited first."""
+Only 2025 or 2026 papers. Most cited first. Summaries in English."""
 
 
 def get_top_cited() -> list:
     if not OPENAI_API_KEY: return []
     log.info("Fetching top cited papers...")
-    # Give it time with a longer timeout
     resp = llm_call(TOP_CITED, max_tokens=2500, temperature=0.3,
                     retry_backoff=(2, 4, 8, 16))
     if not resp:
@@ -291,14 +250,14 @@ def get_top_cited() -> list:
             if fence in cleaned:
                 cleaned = cleaned.split(fence)[1].split("```")[0]
         papers = json.loads(cleaned)
-        log.info(f"Top cited: {len(papers)} papers retrieved")
+        log.info(f"Top cited: {len(papers)} retrieved")
         return papers
     except json.JSONDecodeError as e:
         log.error(f"Top cited parse error: {e}")
         return []
 
 
-# ── Cleanup ──────────────────────────────────────────────────────────────────
+# ── Cleanup ───────────────────────────────────────────────────────────────────
 
 def cleanup(directory: str, days: int):
     if not os.path.exists(directory): return
@@ -318,17 +277,15 @@ def generate_html(date_str: str, papers: list, top_cited: list):
         from jinja2 import Environment, FileSystemLoader
     except ImportError:
         log.warning("jinja2 not available"); return
-
     env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
     tmpl = env.get_template(TEMPLATE_NAME)
     try:
         rdate = date.fromisoformat(date_str)
         fmt   = rdate.strftime("%Y_%m_%d")
-        title = f"Audio/Speech AI Papers — {rdate.strftime('%B %d, %Y')}"
+        title = f"Audio/Speech AI Papers - {rdate.strftime('%B %d, %Y')}"
     except ValueError:
         fmt   = date.today().strftime("%Y_%m_%d")
         title = "Audio/Speech AI Papers"
-
     html = tmpl.render(
         papers=papers, title=title, report_date=rdate,
         generation_time=datetime.now(timezone.utc),
@@ -340,10 +297,75 @@ def generate_html(date_str: str, papers: list, top_cited: list):
     log.info(f"Generated: {out}")
 
 
+# ── Index & list pages ───────────────────────────────────────────────────────
+
+def generate_index_and_list():
+    files = sorted([f for f in os.listdir(HTML_DIR) if f.endswith(".html")], reverse=True)
+    list_html = f"""<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Audio AI Daily</title>
+<style>
+  body{{font-family:system-ui;max-width:800px;margin:40px auto;padding:0 20px}}
+  h1{{color:#0f172a}}a{{color:#14b8a6;text-decoration:none}}a:hover{{text-decoration:underline}}
+  li{{margin:8px 0}}
+</style>
+</head>
+<body>
+  <h1>Audio/Speech AI Daily - Historical Reports</h1>
+  <p><a href="index.html">Latest report</a></p>
+  <ul>
+    {"".join(f'<li><a href="./daily_html/{f}">{f}</a></li>' for f in files)}
+  </ul>
+</body>
+</html>"""
+    with open(os.path.join(PROJECT_ROOT, "list.html"), "w") as f:
+        f.write(list_html)
+    index_html = """<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Audio/Speech AI Daily</title>
+<style>
+  html,body{{margin:0;padding:0;height:100%;display:flex;flex-direction:column;font-family:system-ui}}
+  #wrapper{{flex:1;overflow:hidden;position:relative}}
+  iframe{{border:none;width:100%;height:100%;display:block}}
+  #footer{{flex-shrink:0;height:40px;line-height:40px;text-align:center;border-top:1px solid #eee}}
+  #footer a{{color:#14b8a6;text-decoration:none}}
+  #loading,#error{{padding:40px;text-align:center;color:#64748b}}
+</style>
+<script>
+  async function load(){{
+    try{{
+      const r = await fetch("reports.json");
+      const files = await r.json();
+      if(files && files.length){{
+        document.getElementById("report").src = "./daily_html/" + files[0];
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("report").style.display = "block";
+      }}
+    }}catch(e){{
+      document.getElementById("loading").innerHTML = "No reports yet. <a href='list.html'>View list</a>";
+    }}
+  }}
+  window.onload = load;
+</script>
+</head>
+<body>
+  <div id="wrapper">
+    <div id="loading">Loading latest report...</div>
+    <iframe id="report" style="display:none"></iframe>
+  </div>
+  <div id="footer"><a href="list.html">Historical Reports</a></div>
+</body>
+</html>"""
+    with open(os.path.join(PROJECT_ROOT, "index.html"), "w") as f:
+        f.write(index_html)
+    log.info("Generated index.html and list.html")
+
+
 def update_reports_and_pages():
     files = sorted([f for f in os.listdir(HTML_DIR) if f.endswith(".html")], reverse=True)
     with open(REPORTS_PATH, "w") as f: json.dump(files, f, indent=4)
     log.info(f"reports.json: {len(files)} reports")
+    generate_index_and_list()
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
@@ -352,9 +374,8 @@ def process(target_date: date, force: bool = False):
     log.info(f"\n{'='*60}\n{target_date}\n{'='*60}")
     jpath = os.path.join(JSON_DIR, f"{target_date.isoformat()}.json")
     os.makedirs(JSON_DIR, exist_ok=True)
-
     if os.path.exists(jpath) and not force:
-        log.info("JSON exists — loading")
+        log.info("JSON exists - loading")
         with open(jpath) as f: papers = json.load(f)
     else:
         raw = fetch_papers(target_date)
@@ -368,7 +389,6 @@ def process(target_date: date, force: bool = False):
             with open(jpath, "w", encoding="utf-8") as f:
                 json.dump(papers, f, indent=4, ensure_ascii=False)
             log.info(f"Saved {jpath} ({len(papers)} papers)")
-
     is_today = (target_date == date.today())
     top_cited = get_top_cited() if is_today else []
     generate_html(target_date.isoformat(), papers, top_cited)
@@ -377,103 +397,13 @@ def process(target_date: date, force: bool = False):
 
 
 def main():
-    global OPENAI_MODEL
-
-    # Auto-detect model
-    if OPENAI_MODEL == "gpt-4" or not OPENAI_MODEL:
-        detected = detect_model()
-        if detected:
-            OPENAI_MODEL = detected
-
-    log.info(f"Model: {OPENAI_MODEL} | API: {OPENAI_API_BASE_URL}")
-
+    log.info(f"Model: {OPENAI_MODEL} | API: {OPENAI_API_URL}")
     cleanup(JSON_DIR, DATA_RETENTION)
     cleanup(HTML_DIR, DATA_RETENTION)
-
     today = date.today()
     for d in [today - timedelta(days=1), today]:
         process(d)
-
-    log.info("Done!")
+    log.info("Pipeline complete!")
 
 if __name__ == "__main__":
     main()
-
-
-# ── Index & list pages ───────────────────────────────────────────────────────
-
-def generate_index_and_list():
-    """Generate index.html (latest report) and list.html (all reports)."""
-    # List page
-    files = sorted([f for f in os.listdir(HTML_DIR) if f.endswith(".html")], reverse=True)
-    list_html = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8"><title>Audio AI Daily — Reports</title>
-  <style>
-    body {{ font-family: system-ui; max-width: 800px; margin: 40px auto; padding: 0 20px; }}
-    h1 {{ color: #0f172a; }}
-    a {{ color: #14b8a6; text-decoration: none; }}
-    a:hover {{ text-decoration: underline; }}
-    li {{ margin: 8px 0; }}
-  </style>
-</head>
-<body>
-  <h1>📋 Audio/Speech AI Daily — Historical Reports</h1>
-  <p><a href="index.html">← Back to latest report</a></p>
-  <ul>
-    {"".join(f'<li><a href="./daily_html/{f}">{f}</a></li>' for f in files)}
-  </ul>
-</body>
-</html>"""
-    with open(os.path.join(PROJECT_ROOT, "list.html"), "w") as f:
-        f.write(list_html)
-
-    # Index page (iframe redirect)
-    index_html = """<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Audio/Speech AI Daily</title>
-  <style>
-    html, body { margin: 0; padding: 0; height: 100%; display: flex; flex-direction: column; font-family: system-ui; }
-    #wrapper { flex: 1; overflow: hidden; position: relative; }
-    iframe { border: none; width: 100%; height: 100%; display: block; }
-    #footer { flex-shrink: 0; height: 40px; line-height: 40px; text-align: center; border-top: 1px solid #eee; }
-    #footer a { color: #14b8a6; text-decoration: none; }
-    #footer a:hover { text-decoration: underline; }
-    #loading { padding: 40px; text-align: center; color: #64748b; }
-    #error { padding: 40px; color: red; }
-  </style>
-  <script>
-    async function load() {
-      const iframe = document.getElementById("report");
-      try {
-        const r = await fetch("reports.json");
-        if (!r.ok) throw new Error("reports.json not found");
-        const files = await r.json();
-        if (files && files.length) {
-          iframe.src = "./daily_html/" + files[0];
-          document.getElementById("loading").style.display = "none";
-          iframe.style.display = "block";
-        }
-      } catch(e) {
-        document.getElementById("loading").innerHTML = "No reports yet. <a href='list.html'>View list</a>";
-      }
-    }
-    window.onload = load;
-  </script>
-</head>
-<body>
-  <div id="wrapper">
-    <div id="loading">Loading latest report…</div>
-    <iframe id="report" style="display:none"></iframe>
-  </div>
-  <div id="footer">
-    <a href="list.html">📋 Historical Reports</a>
-  </div>
-</body>
-</html>"""
-    with open(os.path.join(PROJECT_ROOT, "index.html"), "w") as f:
-        f.write(index_html)
-    log.info("Generated index.html and list.html")

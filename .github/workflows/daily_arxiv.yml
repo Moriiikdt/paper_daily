@@ -2,15 +2,18 @@ name: Daily Audio/Speech AI Papers
 
 on:
   schedule:
-    # Run at 04:00 UTC daily
-    - cron: '0 4 * * *'
-  workflow_dispatch:
+    - cron: "0 1 * * *"   # Run at 01:00 UTC daily
+  workflow_dispatch:       # Manual trigger
   push:
     branches:
       - main
+    paths-ignore:
+      - 'README.md'
 
 jobs:
-  build_and_deploy:
+  build:
+    # Skip if triggered by our own bot commit (prevents infinite loop)
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -20,6 +23,9 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GH_PAT }}
+        persist-credentials: true
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -27,40 +33,33 @@ jobs:
         python-version: '3.11'
 
     - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      run: pip install feedparser requests beautifulsoup4 lxml
 
+    # ── Run paper pipeline ──────────────────────────────────────────────
     - name: Run paper fetcher
+      run: python scripts/fetch_and_filter.py >> $GITHUB_STEP_SUMMARY 2>&1
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         OPENAI_API_BASE: ${{ secrets.OPENAI_API_BASE }}
-        OPENAI_MODEL: gpt-5.4
-      run: python src/main.py
 
-    - name: Commit and push changes
+    # ── Prevent self-trigger: amend commit so the next run sees bot actor
+    # After this amend, github.actor will be 'github-actions[bot]' and
+    # the `if: github.actor != 'github-actions[bot]'` guard will skip it.
+    - name: Mark as bot commit
       run: |
-        git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        
-        git add daily_json/ daily_html/ index.html list.html reports.json
-        
-        # Check if there are changes
-        if git diff --staged --quiet; then
+        git config --local user.name "github-actions[bot]"
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git add -A
+        if git diff --cached --quiet; then
           echo "No changes to commit"
         else
-          # Skip if this commit was made by ourselves (prevent infinite loop)
-          LAST_AUTHOR=$(git log -1 --format='%ae')
-          if [[ "$LAST_AUTHOR" == *"github-actions[bot]"* ]]; then
-            echo "Skipping commit - triggered by own previous run"
-          else
-            git commit -m "Update papers $(date +'%Y-%m-%d')"
-            git push
-          fi
+          git commit --amend --no-edit --allow-empty
+          git push origin ${{ github.ref }}
         fi
 
+    # ── Deploy GitHub Pages ─────────────────────────────────────────────
     - name: Setup Pages
-      uses: actions/configure-pages@v5
+      uses: actions/configure-pages@v4
 
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3

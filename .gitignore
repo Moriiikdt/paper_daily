@@ -1,3 +1,11 @@
+# Generated data — stay out of git (all in root)
+daily_json/
+daily_html/
+reports.json
+index.html
+list.html
+
+# Python
 __pycache__/
 *.pyc
 *.egg-info/
@@ -5,6 +13,11 @@ __pycache__/
 venv/
 *.log
 .env
+
+# macOS / editor
 .DS_Store
 *.swp
 test_artifacts/
+
+# arxiv client cache
+arxiv-client.json

@@ -7,16 +7,22 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - 'README.md'
 
+# Only one run at a time; cancel stale in-progress runs
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: arxiv-daily-deploy
   cancel-in-progress: true
 
 jobs:
   build:
-    if: github.actor != 'github-actions[bot]'
+    # Prevent self-trigger: skip if the last commit was made by github-actions[bot]
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      github.event_name != 'push' ||
+      github.event_name == 'push' && !(
+        startsWith(github.event.head_commit.author.email, '41898282+github-actions') &&
+        endsWith(github.event.head_commit.author.email, '@users.noreply.github.com')
+      )
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -38,7 +44,7 @@ jobs:
     - name: Install dependencies
       run: pip install arxiv requests jinja2 beautifulsoup4 lxml
 
-    - name: Run pipeline
+    - name: Run pipeline (daily only)
       run: python scripts/fetch_and_filter.py >> $GITHUB_STEP_SUMMARY 2>&1
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -46,19 +52,27 @@ jobs:
 
     - name: Push changes
       run: |
+        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        # Remove generated files that should stay untracked
+        git restore --source=HEAD -- index.html list.html reports.json 2>/dev/null || true
+        rm -f index.html list.html reports.json
         git add -A
         if git diff --cached --quiet; then
           echo "No changes to commit"
         else
-          git pull --rebase origin ${{ github.ref }} || true
-          git commit --amend --no-edit --allow-empty
-          git push origin ${{ github.ref }}
+          # Fetch latest remote, reset local to it, then apply staged changes
+          git fetch --depth=1 origin main
+          git reset --hard origin/main
+          git add -A
+          git commit -m "$(git log -1 --format='%s' | head -1)" || true
+          # Use force-with-lease to protect against races
+          git push origin main --force-with-lease || echo "Push skipped (concurrent run)"
         fi
 
     - name: Setup Pages
       uses: actions/configure-pages@v4
+      if: success()
 
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
@@ -68,3 +82,4 @@ jobs:
     - name: Deploy
       id: deployment
       uses: actions/deploy-pages@v4
+      if: success()

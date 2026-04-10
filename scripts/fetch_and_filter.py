@@ -27,7 +27,7 @@ TEMPLATE_NAME   = "paper_template.html"
 REPORTS_PATH    = os.path.join(PROJECT_ROOT, "reports.json")
 DATA_RETENTION  = 60   # days
 
-TARGET_CATEGORIES = ["cs.CL", "cs.AI"]
+TARGET_CATEGORIES = ["cs.CL", "cs.AI", "cs.LG", "cs.SD", "eess.AS", "cs.MM", "cs.CV"]
 
 RESEARCH_TOPICS = """The user is interested in papers related to:
 1. Audio Large Language Models (Audio LLM, Audio Foundation Models)
@@ -41,7 +41,7 @@ RESEARCH_TOPICS = """The user is interested in papers related to:
 def llm_call(prompt: str,
              max_tokens: int = 200,
              temperature: float = 0.1,
-             retry_backoff: tuple = (2, 4, 8, 16)) -> Optional[str]:
+             retry_backoff: tuple = (3, 6, 12, 24, 48)) -> Optional[str]:
     """Call LLM with exponential-backoff retry on transient errors AND empty responses."""
     if not OPENAI_API_KEY:
         log.error("OPENAI_API_KEY not set"); return None
@@ -62,7 +62,7 @@ def llm_call(prompt: str,
             log.info(f"  ↻ Retry {attempt+1}/{len(retry_backoff)+1} after {wait}s…")
             time.sleep(wait)
         try:
-            resp = requests.post(OPENAI_API_URL, headers=headers, json=payload, timeout=60)
+            resp = requests.post(OPENAI_API_URL, headers=headers, json=payload, timeout=120)
             if resp.status_code == 429:
                 log.warning("  ⚠ 429 rate-limit, backing off")
                 continue
@@ -102,7 +102,7 @@ def fetch_papers(specified_date: date) -> list:
         try:
             search = arxiv.Search(
                 query=query,
-                max_results=5,
+                max_results=15,
                 sort_by=arxiv.SortCriterion.SubmittedDate,
             )
             cnt = 0
@@ -168,9 +168,9 @@ Example reply: 1, 3, 5
                 filtered.append(p)
         time.sleep(0.5)
     log.info(f"Filter: {len(filtered)}/{len(papers)} passed")
-    # Only keep top 5 for rate_papers to minimize API calls
-    filtered = filtered[:5]
-    log.info(f"  → Capped to top 5 for rating")
+    # Cap at 20 for rate_papers to balance quality and speed
+    filtered = filtered[:20]
+    log.info(f"  → Capped to top 20 for rating")
     return filtered
 
 
@@ -236,7 +236,7 @@ def rate_papers(papers: list) -> list:
     if not papers:
         return []
 
-    papers = papers[:3]
+    papers = papers[:15]
     BATCH  = 2  # smaller batch = more reliable, especially for Chinese
     rated  = []
     for i in range(0, len(papers), BATCH):

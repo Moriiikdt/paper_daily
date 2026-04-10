@@ -287,7 +287,14 @@ def get_top_cited() -> list:
         return papers
     except json.JSONDecodeError as e:
         log.error(f"Top-cited parse error: {e}")
-        return []
+        # Save as plain text fallback so the template can display it
+        safe = resp.strip()
+        try:
+            import json as _j
+            with open(os.path.join(JSON_DIR, f"top_cited_fallback_{date.today().isoformat()}.txt"), "w") as _f:
+                _f.write(safe)
+        except: pass
+        return [safe]
 
 
 # ── Cleanup ───────────────────────────────────────────────────────────────────
@@ -322,11 +329,14 @@ def generate_html(date_str: str, papers: list, top_cited: list):
         fmt   = date.today().strftime("%Y_%m_%d")
         title = "Audio/Speech AI Daily"
 
+    today_yr = date.today().year
     html = tmpl.render(
         papers=papers, title=title,
         report_date=rdate,
         generation_time=datetime.now(timezone.utc),
         top_cited_papers=top_cited,
+        prev_year=today_yr - 1,
+        curr_year=today_yr,
     )
     out = os.path.join(HTML_DIR, f"{fmt}.html")
     os.makedirs(HTML_DIR, exist_ok=True)

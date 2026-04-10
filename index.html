@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Audio/Speech AI Daily Papers</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        #content-wrapper {
+            flex: 1 1 auto;
+            overflow: hidden;
+            position: relative;
+        }
+        iframe {
+            border: none;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        #footer {
+            flex-shrink: 0;
+            height: 40px;
+            line-height: 40px;
+            text-align: center;
+            border-top: 1px solid #eee;
+        }
+        #loading-message, #error-message {
+            padding: 20px;
+            text-align: center;
+            margin-top: 50px;
+        }
+        #error-message p {
+            color: red;
+        }
+        #footer a {
+            color: #14b8a6;
+            text-decoration: none;
+        }
+        #footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <script>
+        async function loadLatestReport() {
+            const iframe = document.getElementById('report-frame');
+            const loading = document.getElementById('loading-message');
+            const errorDiv = document.getElementById('error-message');
+
+            try {
+                const response = await fetch('reports.json');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const reports = await response.json();
+
+                if (reports && reports.length > 0) {
+                    iframe.src = './daily_html/' + reports[0];
+                    document.title = 'Audio/Speech AI Daily - ' + reports[0].replace('.html', '').replace(/_/g, '-');
+                    loading.style.display = 'none';
+                    iframe.style.display = 'block';
+                } else {
+                    throw new Error('No reports available');
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                errorDiv.innerHTML = '<p>Error loading report: ' + error.message + ' <a href="./list.html">View list</a></p>';
+                errorDiv.style.display = 'block';
+            }
+        }
+        window.onload = loadLatestReport;
+    </script>
+</head>
+<body>
+    <div id="content-wrapper">
+        <div id="loading-message"><p>Loading latest report...</p></div>
+        <div id="error-message" style="display: none;"></div>
+        <iframe id="report-frame" style="display: none;"></iframe>
+    </div>
+    <div id="footer">
+        <a href="./list.html">📋 Historical Reports</a>
+    </div>
+</body>
+</html>

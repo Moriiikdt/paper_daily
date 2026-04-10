@@ -346,7 +346,7 @@ def generate_html(date_str: str, papers: list, top_cited: list):
     log.info(f"Generated: {out}")
 
 
-def update_reports():
+def update_reports_and_pages():
     files = sorted([f for f in os.listdir(HTML_DIR) if f.endswith(".html")], reverse=True)
     with open(REPORTS_PATH, "w") as f: json.dump(files, f, indent=4)
     log.info(f"reports.json: {len(files)} reports")
@@ -378,7 +378,7 @@ def process(target_date: date, force: bool = False):
     is_today = (target_date == date.today())
     top_cited = get_top_cited() if is_today else []
     generate_html(target_date.isoformat(), papers, top_cited)
-    if is_today: update_reports()
+    if is_today: update_reports_and_pages()
     return papers
 
 
@@ -404,3 +404,82 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# ── Index & list pages ───────────────────────────────────────────────────────
+
+def generate_index_and_list():
+    """Generate index.html (latest report) and list.html (all reports)."""
+    # List page
+    files = sorted([f for f in os.listdir(HTML_DIR) if f.endswith(".html")], reverse=True)
+    list_html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><title>Audio AI Daily — Reports</title>
+  <style>
+    body {{ font-family: system-ui; max-width: 800px; margin: 40px auto; padding: 0 20px; }}
+    h1 {{ color: #0f172a; }}
+    a {{ color: #14b8a6; text-decoration: none; }}
+    a:hover {{ text-decoration: underline; }}
+    li {{ margin: 8px 0; }}
+  </style>
+</head>
+<body>
+  <h1>📋 Audio/Speech AI Daily — Historical Reports</h1>
+  <p><a href="index.html">← Back to latest report</a></p>
+  <ul>
+    {"".join(f'<li><a href="./daily_html/{f}">{f}</a></li>' for f in files)}
+  </ul>
+</body>
+</html>"""
+    with open(os.path.join(PROJECT_ROOT, "list.html"), "w") as f:
+        f.write(list_html)
+
+    # Index page (iframe redirect)
+    index_html = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Audio/Speech AI Daily</title>
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; display: flex; flex-direction: column; font-family: system-ui; }
+    #wrapper { flex: 1; overflow: hidden; position: relative; }
+    iframe { border: none; width: 100%; height: 100%; display: block; }
+    #footer { flex-shrink: 0; height: 40px; line-height: 40px; text-align: center; border-top: 1px solid #eee; }
+    #footer a { color: #14b8a6; text-decoration: none; }
+    #footer a:hover { text-decoration: underline; }
+    #loading { padding: 40px; text-align: center; color: #64748b; }
+    #error { padding: 40px; color: red; }
+  </style>
+  <script>
+    async function load() {
+      const iframe = document.getElementById("report");
+      try {
+        const r = await fetch("reports.json");
+        if (!r.ok) throw new Error("reports.json not found");
+        const files = await r.json();
+        if (files && files.length) {
+          iframe.src = "./daily_html/" + files[0];
+          document.getElementById("loading").style.display = "none";
+          iframe.style.display = "block";
+        }
+      } catch(e) {
+        document.getElementById("loading").innerHTML = "No reports yet. <a href='list.html'>View list</a>";
+      }
+    }
+    window.onload = load;
+  </script>
+</head>
+<body>
+  <div id="wrapper">
+    <div id="loading">Loading latest report…</div>
+    <iframe id="report" style="display:none"></iframe>
+  </div>
+  <div id="footer">
+    <a href="list.html">📋 Historical Reports</a>
+  </div>
+</body>
+</html>"""
+    with open(os.path.join(PROJECT_ROOT, "index.html"), "w") as f:
+        f.write(index_html)
+    log.info("Generated index.html and list.html")

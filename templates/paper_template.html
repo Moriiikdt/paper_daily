@@ -10,42 +10,21 @@
     <style>
         :root {
             --bg:#f9f8f6; --surface:#ffffff; --border:#e8e4df; --text:#1a1a1a;
-            --muted:#7a7a7a; --accent:#2563eb; --accent-h:#1d4ed8;
+            --muted:#7a7a7a; --accent:#2563eb; --accent-light:#eff6ff;
             --gold:#d97706; --gold-bg:#fef3c7; --navy:#0f172a;
-            --tag-bg:#f1f5f9; --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.06);
-            --shadow-h:0 4px 12px rgba(0,0,0,.10),0 12px 32px rgba(0,0,0,.10);
+            --tag-bg:#f1f5f9;
+            --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.06);
+            --shadow-lg:0 4px 12px rgba(0,0,0,.10),0 12px 32px rgba(0,0,0,.10);
             --radius:12px; --font-sans:'Inter','Noto Sans SC',system-ui,sans-serif;
             --font-serif:'Noto Serif SC',Georgia,serif;
         }
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         html{font-size:16px;scroll-behavior:smooth}
         body{background:var(--bg);color:var(--text);font-family:var(--font-sans);line-height:1.65;-webkit-font-smoothing:antialiased}
-        a{color:var(--accent);text-decoration:none}
-        a:hover{text-decoration:underline}
+        a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
 
-        /* Top bar */
-        .topbar{background:var(--navy);color:#fff;padding:.6rem 2rem;display:flex;align-items:center;justify-content:space-between;font-size:.78rem}
-        .topbar-brand{font-weight:700;font-size:.88rem;letter-spacing:.03em;color:#fff}
-        .topbar-brand span{color:#60a5fa}
-        .topbar-date{color:#64748b}
-        .topbar-nav a{color:#94a3b8;margin-left:1.25rem;transition:color .2s}
-        .topbar-nav a:hover{color:#fff;text-decoration:none}
-
-        /* Hero */
-        .hero{background:linear-gradient(135deg,#0f172a 0%,#1e293b 60%,#1e3a5f 100%);color:#fff;padding:3rem 2rem 2rem;position:relative;overflow:hidden}
-        .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(37,99,235,.25) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(96,165,250,.15) 0%,transparent 50%);pointer-events:none}
-        .hero-inner{max-width:860px;margin:0 auto;position:relative}
-        .hero-eyebrow{display:inline-flex;align-items:center;gap:.4rem;background:rgba(37,99,235,.3);border:1px solid rgba(96,165,250,.3);color:#93c5fd;font-size:.7rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:.28rem .75rem;border-radius:100px;margin-bottom:1rem}
-        .hero h1{font-size:clamp(1.4rem,4vw,2.1rem);font-weight:800;line-height:1.2;margin-bottom:.5rem;letter-spacing:-.02em}
-        .hero h1 .accent{color:#60a5fa}
-        .hero-sub{color:#94a3b8;font-size:.9rem;max-width:560px;line-height:1.6;margin-bottom:1rem}
-        .hero-stats{display:flex;gap:2rem;font-size:.78rem}
-        .hero-stat{color:#64748b}
-        .hero-stat strong{color:#fff;font-weight:700;margin-right:.25rem}
-        .hero-rule{height:1px;background:linear-gradient(90deg,rgba(96,165,250,.4),rgba(96,165,250,.1),transparent);max-width:860px;margin:0 auto}
-
-        /* Container */
-        .container{max-width:900px;margin:0 auto;padding:2rem 1.5rem 4rem}
+        /* Content container */
+        .container{max-width:900px;margin:0 auto;padding:1.5rem 1.5rem 3rem}
 
         /* Section header */
         .section-hdr{display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem}
@@ -64,20 +43,22 @@
         .top-cited-table tr:hover td{background:rgba(255,255,255,.03)}
         .rank-dot{display:inline-flex;align-items:center;justify-content:center;width:1.5rem;height:1.5rem;border-radius:50%;font-weight:800;font-size:.7rem;flex-shrink:0}
         .rank-1{background:#fbbf24;color:#1e293b}.rank-2{background:#94a3b8;color:#1e293b}.rank-3{background:#b87333;color:#fff}.rank-other{background:#334155;color:#94a3b8}
-        .top-title{color:#e2e8f0;font-weight:500;line-height:1.35}
+        .top-title{color:#e2e8f0;font-weight:500;line-height:1.35;font-size:.85rem}
         .top-title a{color:#93c5fd}.top-title a:hover{color:#fff;text-decoration:none}
-        .top-summary{color:#64748b;font-size:.73rem;margin-top:.2rem;line-height:1.4}
-        .top-authors{color:#64748b;font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+        .top-summary{color:#64748b;font-size:.72rem;margin-top:.2rem;line-height:1.4}
+        .top-authors{color:#64748b;font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px}
         .top-citations{display:inline-flex;align-items:center;gap:.2rem;background:rgba(251,191,36,.15);color:#fbbf24;font-weight:700;font-size:.72rem;padding:.18rem .5rem;border-radius:100px;white-space:nowrap}
         .top-venue{color:#64748b;font-size:.7rem}
         .top-plain{color:#94a3b8;white-space:pre-wrap;line-height:1.8;font-size:.82rem}
+        .top-year{color:#64748b;font-size:.72rem}
 
         /* Paper cards */
         .papers-list{display:flex;flex-direction:column;gap:1.25rem}
         .paper-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem 1.75rem;box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s,border-color .2s}
-        .paper-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-h);border-color:#d1d5db}
+        .paper-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);border-color:#d1d5db}
+
         .card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.75rem}
-        .card-num{font-size:.72rem;color:var(--muted);padding:.2rem .5rem;background:var(--tag-bg);border-radius:6px;white-space:nowrap;flex-shrink:0;margin-top:.1rem;font-family:monospace}
+        .card-num{font-size:.72rem;color:var(--muted);padding:.2rem .5rem;background:var(--tag-bg);border-radius:6px;white-space:nowrap;flex-shrink:0;margin-top:.08rem;font-family:monospace}
         .card-title{font-size:1.05rem;font-weight:700;color:var(--text);line-height:1.35;letter-spacing:-.01em;flex:1}
         .card-title a{color:inherit;text-decoration:none}.card-title a:hover{color:var(--accent);text-decoration:none}
 
@@ -89,11 +70,12 @@
         .star-on{color:var(--gold)}.star-off{color:#e5e7eb}
         .overall-score{display:inline-flex;align-items:center;gap:.3rem;font-size:.7rem;font-weight:700;color:#fff;background:var(--accent);padding:.18rem .55rem;border-radius:100px}
 
-        /* Chinese abstract */
-        .abstract-zh{font-family:var(--font-serif);font-size:.9rem;line-height:1.85;color:#374151;margin-bottom:.8rem;padding:.8rem 1rem;background:linear-gradient(135deg,#f0f9ff,#eff6ff);border-left:3px solid var(--accent);border-radius:0 8px 8px 0}
+        /* Chinese abstract — prominent */
+        .abstract-zh{font-family:var(--font-serif);font-size:.9rem;line-height:1.9;color:#374151;margin-bottom:.75rem;padding:.85rem 1rem;background:linear-gradient(135deg,#f0f9ff,#eff6ff);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;position:relative}
+        .abstract-zh::after{content:'中文';position:absolute;top:.5rem;right:.6rem;font-size:.62rem;font-weight:700;color:var(--accent);letter-spacing:.04em;opacity:.55;font-family:'Inter',sans-serif}
 
-        /* TLDR / English summary */
-        .tldr{font-size:.83rem;color:#4b5563;margin-bottom:.8rem;padding:.6rem .9rem;background:var(--gold-bg);border-radius:8px;border:1px solid #fde68a}
+        /* English summary */
+        .tldr{font-size:.82rem;color:#4b5563;margin-bottom:.75rem;padding:.6rem .9rem;background:var(--gold-bg);border-radius:8px;border:1px solid #fde68a;line-height:1.6}
         .tldr-label{font-weight:700;color:var(--gold);font-size:.7rem;letter-spacing:.04em;text-transform:uppercase;margin-right:.4rem}
 
         /* Card footer */
@@ -103,50 +85,32 @@
         .card-link:hover{background:#dbeafe;border-color:#93c5fd;text-decoration:none}
         .card-authors{font-size:.72rem;color:var(--muted);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:300px}
 
+        /* Date tag */
+        .date-tag{font-size:.75rem;color:var(--muted);text-align:center;padding:1rem 0 .5rem;font-weight:600;letter-spacing:.02em}
+
         /* Empty */
         .empty-state{text-align:center;padding:4rem 2rem;color:var(--muted)}
         .empty-state h3{font-size:1.1rem;margin-bottom:.5rem;color:var(--text)}
 
-        /* Footer */
-        .footer{border-top:1px solid var(--border);padding:1.5rem 2rem;text-align:center;font-size:.75rem;color:var(--muted);max-width:900px;margin:0 auto}
+        /* Generation footer */
+        .gen-footer{border-top:1px solid var(--border);padding:1rem 1.5rem;text-align:center;font-size:.72rem;color:var(--muted)}
 
         @media(max-width:640px){
-            .topbar{padding:.5rem 1rem}
-            .hero{padding:2rem 1rem 1.5rem}
-            .container{padding:1.5rem 1rem 3rem}
+            .container{padding:1rem 1rem 2rem}
             .paper-card{padding:1.25rem}
-            .top-authors{display:none}
+            .top-authors,.top-year,.top-venue{display:none}
             .card-authors{max-width:180px}
         }
     </style>
 </head>
 <body>
 
-    <!-- Top bar -->
-    <div class="topbar">
-        <div class="topbar-brand">🎧 <span>Audio/Speech AI</span> Daily</div>
-        <div class="topbar-date">{{ report_date.strftime('%Y-%m-%d') }}</div>
-        <nav class="topbar-nav">
-            <a href="../index.html">Latest</a>
-            <a href="../list.html">Archive</a>
-        </nav>
+    <!-- Date / context tag -->
+    <div class="date-tag">
+        <i class="fas fa-calendar-day" style="margin-right:.4rem;color:var(--gold)"></i>
+        {{ report_date.strftime('%B %d, %Y') }}
     </div>
 
-    <!-- Hero -->
-    <div class="hero">
-        <div class="hero-inner">
-            <div class="hero-eyebrow"><i class="fas fa-bolt"></i> Daily Update</div>
-            <h1>Audio &amp; Speech AI <span class="accent">Research</span></h1>
-            <p class="hero-sub">每日筛选 Audio LLM、语音感知与理解、语音合成、Omni 全模态模型领域最新论文。<br>Based on arXiv submissions · Auto-generated with GPT-5.4</p>
-            <div class="hero-stats">
-                <div class="hero-stat"><strong>{{ papers|length }}</strong> papers today</div>
-                <div class="hero-stat"><strong>{{ prev_year }}–{{ curr_year }}</strong> top cited</div>
-            </div>
-        </div>
-    </div>
-    <div class="hero-rule"></div>
-
-    <!-- Main -->
     <div class="container">
 
         {# Top-10 Most Cited #}
@@ -162,10 +126,10 @@
                 <h2><i class="fas fa-trophy" style="color:#fbbf24;margin-right:.4rem"></i>Most Cited Papers</h2>
                 <span class="year-badge">{{ prev_year }}–{{ curr_year }}</span>
             </div>
-            <div class="overflow-x-auto">
+            <div style="overflow-x:auto">
             <table class="top-cited-table">
                 <thead>
-                    <tr><th style="width:44px">#</th><th>Title</th><th style="width:130px">Authors</th><th style="width:50px">Year</th><th style="width:80px">Citations</th><th style="width:70px">Venue</th></tr>
+                    <tr><th style="width:44px">#</th><th>Title</th><th style="width:110px">Authors</th><th style="width:50px">Year</th><th style="width:80px">Citations</th></tr>
                 </thead>
                 <tbody>
                 {% for paper in top_cited_papers %}
@@ -178,12 +142,11 @@
                         </td>
                         <td>
                             <div class="top-title"><a href="{{ paper.url if paper.url else '#' }}" target="_blank">{{ paper.title }}</a></div>
-                            {% if paper.summary %}<div class="top-summary">{{ paper.summary[:120] }}{% if paper.summary|length > 120 %}…{% endif %}</div>{% endif %}
+                            {% if paper.summary %}<div class="top-summary">{{ paper.summary[:100] }}{% if paper.summary|length > 100 %}…{% endif %}</div>{% endif %}
                         </td>
                         <td class="top-authors">{{ paper.authors if paper.authors else '' }}</td>
-                        <td class="top-venue">{{ paper.year if paper.year else '' }}</td>
-                        <td><span class="top-citations"><i class="fas fa-quote-left" style="font-size:.65rem"></i> {{ paper.citations if paper.citations else '' }}</span></td>
-                        <td class="top-venue">{{ paper.venue if paper.venue else '' }}</td>
+                        <td class="top-year">{{ paper.year if paper.year else '' }}</td>
+                        <td><span class="top-citations"><i class="fas fa-quote-left" style="font-size:.6rem"></i> {{ paper.citations if paper.citations else '' }}</span></td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -197,7 +160,7 @@
 
         {# Today's Papers #}
         <div class="section-hdr">
-            <h2><i class="fas fa-scroll" style="color:var(--accent);margin-right:.4rem"></i>Today's Papers ({{ papers|length }})</h2>
+            <h2><i class="fas fa-scroll" style="color:var(--accent);margin-right:.4rem"></i>Papers Today ({{ papers|length }})</h2>
             <div class="line"></div>
         </div>
 
@@ -221,14 +184,14 @@
                 </div>
                 {% endif %}
 
-                {# Chinese abstract #}
+                {# Chinese abstract — most prominent #}
                 {% if paper.tldr %}
                 <div class="abstract-zh">{{ paper.tldr }}</div>
                 {% endif %}
 
-                {# English summary #}
+                {# English summary — only if different from Chinese #}
                 {% if paper.summary and paper.summary != paper.tldr %}
-                <div class="tldr"><span class="tldr-label">Summary</span> {{ paper.summary[:300] }}{% if paper.summary|length > 300 %}…{% endif %}</div>
+                <div class="tldr"><span class="tldr-label">Summary</span> {{ paper.summary[:280] }}{% if paper.summary|length > 280 %}…{% endif %}</div>
                 {% endif %}
 
                 <div class="card-footer">
@@ -241,14 +204,18 @@
 
             </div>
             {% else %}
-            <div class="empty-state"><h3>No papers today 🎉</h3><p>No relevant papers found for today. Check back tomorrow!</p></div>
+            <div class="empty-state">
+                <div style="font-size:2rem;margin-bottom:.5rem">🎉</div>
+                <h3>No papers today</h3>
+                <p>No relevant papers found. Check back tomorrow!</p>
+            </div>
             {% endfor %}
         </div>
     </div>
 
-    <footer class="footer">
-        Generated {{ generation_time.strftime('%Y-%m-%d %H:%M UTC') }} &nbsp;·&nbsp; Audio/Speech AI Daily &nbsp;·&nbsp; Powered by arXiv + GPT-5.4
-    </footer>
+    <div class="gen-footer">
+        Generated {{ generation_time.strftime('%Y-%m-%d %H:%M UTC') }} &nbsp;·&nbsp; Powered by arXiv + GPT-5.4
+    </div>
 
 </body>
 </html>

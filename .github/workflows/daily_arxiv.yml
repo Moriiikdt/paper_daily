@@ -14,14 +14,11 @@ concurrency:
 
 jobs:
   build:
-    # Self-trigger guard: skip if last commit was by github-actions[bot]
+    # Self-trigger guard: skip if the push commit was made by github-actions[bot]
+    # Runs for: schedule trigger, workflow_dispatch, AND human pushes
+    # Skips for: bot-push triggered runs
     if: >-
-      github.actor != 'github-actions[bot]' &&
-      github.event_name != 'push' ||
-      github.event_name == 'push' && !(
-        startsWith(github.event.head_commit.author.email, '41898282+github-actions') &&
-        endsWith(github.event.head_commit.author.email, '@users.noreply.github.com')
-      )
+      github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -51,16 +48,18 @@ jobs:
       run: |
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-        # Remove any generated files that may have gotten tracked
-        git restore --source=HEAD -- index.html list.html reports.json 2>/dev/null || true
+        # Remove tracked generated files (they are gitignored but may be in HEAD)
+        git rm -f index.html list.html reports.json 2>/dev/null || true
         rm -f index.html list.html reports.json
         git add -A
         if git diff --cached --quiet; then
           echo "No changes to commit"
         else
-          # Fetch latest remote and reset hard, then apply our staged changes
+          # Fetch latest remote, reset to it, then apply our staged changes
           git fetch --depth=1 origin main
           git reset --hard origin/main
+          # Clean stale generated files that were in the remote
+          rm -f index.html list.html reports.json
           git add -A
           git commit -m "Update papers $(date -u +'%Y-%m-%d')" || true
           git push origin main --force-with-lease || echo "Push skipped (concurrent run)"

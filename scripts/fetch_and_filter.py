@@ -7,6 +7,7 @@ Top-10 cited papers from past year are included once per run.
 
 import os, sys, json, time, logging, arxiv, requests
 from datetime import date, datetime, timedelta, timezone
+import argparse
 from typing import Optional
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -512,12 +513,15 @@ def process(target_date: date, force: bool = False):
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--force", action="store_true")
+    args = parser.parse_args()
     log.info(f"Model: {OPENAI_MODEL}  |  API: {OPENAI_API_URL}")
     cleanup(JSON_DIR, DATA_RETENTION)
     cleanup(HTML_DIR, DATA_RETENTION)
 
     today = date.today()
-    process(today)
+    process(today, force=args.force)
     log.info("Pipeline complete!")
 
 

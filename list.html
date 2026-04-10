@@ -1,61 +1,95 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Historical Reports - Audio/Speech AI Daily</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Historical Reports — Audio/Speech AI Daily</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Inter','Noto Sans SC',system-ui,sans-serif;background:#f9f8f6;color:#1a1a1a;min-height:100vh}
+        a{color:#2563eb;text-decoration:none}
+        a:hover{text-decoration:underline}
+
+        /* Header */
+        .header{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:2rem}
+        .header-inner{max-width:860px;margin:0 auto}
+        .header h1{font-size:1.5rem;font-weight:800;margin-bottom:.3rem}
+        .header h1 span{color:#60a5fa}
+        .header p{color:#94a3b8;font-size:.88rem}
+        .header a{color:#94a3b8;margin-right:1rem;font-size:.82rem}
+        .header a:hover{color:#fff;text-decoration:none}
+
+        /* Content */
+        .content{max-width:860px;margin:0 auto;padding:2rem}
+        .section-hdr{display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem}
+        .section-hdr h2{font-size:1rem;font-weight:700}
+        .section-hdr .line{flex:1;height:1px;background:#e8e4df}
+
+        /* Reports list */
+        .report-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem}
+        .report-card{background:#fff;border:1px solid #e8e4df;border-radius:12px;padding:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,.06);transition:transform .2s,box-shadow .2s,border-color .2s;display:flex;flex-direction:column;gap:.5rem;text-decoration:none;color:inherit}
+        .report-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.10);border-color:#d1d5db;text-decoration:none;color:inherit}
+        .report-date{font-size:1rem;font-weight:700;color:#0f172a}
+        .report-label{font-size:.72rem;color:#7a7a7a;display:flex;align-items:center;gap:.35rem}
+        .report-label i{color:#d97706}
+
+        /* Empty */
+        .empty{text-align:center;padding:4rem 2rem;color:#7a7a7a}
+
+        /* Footer */
+        .footer{border-top:1px solid #e8e4df;padding:1.5rem 2rem;text-align:center;font-size:.75rem;color:#7a7a7a;max-width:860px;margin:0 auto}
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">
-            📋 Audio/Speech AI Daily Reports
-        </h1>
-        <p class="text-center text-gray-500 mb-8">Historical reports (last 2 months)</p>
-        
-        <div id="report-list" class="space-y-4 max-w-2xl mx-auto">
-            <p class="text-center text-gray-500">Loading...</p>
-        </div>
-        
-        <div class="text-center mt-8">
-            <a href="./index.html" class="text-teal-500 hover:text-teal-600">← Back to latest</a>
+<body>
+
+<div class="header">
+    <div class="header-inner">
+        <h1>Audio &amp; Speech AI <span>Research</span></h1>
+        <p>📋 历史报告 · Last 2 months</p>
+        <div style="margin-top:.75rem">
+            <a href="./index.html">← Latest Report</a>
         </div>
     </div>
+</div>
 
-    <script>
-        async function loadReports() {
-            const list = document.getElementById('report-list');
-            
-            try {
-                const resp = await fetch('reports.json');
-                if (!resp.ok) throw new Error('Failed to load');
-                const reports = await resp.json();
-                
-                list.innerHTML = '';
+<div class="content">
+    <div class="section-hdr">
+        <h2>📅 All Reports</h2>
+        <div class="line"></div>
+    </div>
+    <div id="reports" class="report-grid">
+        <div style="color:#7a7a7a;grid-column:1/-1;text-align:center;padding:2rem">Loading…</div>
+    </div>
+</div>
 
-                if (!reports.length) {
-                    list.innerHTML = '<p class="text-center text-gray-500">No reports yet</p>';
-                    return;
-                }
+<footer class="footer">
+    Audio/Speech AI Daily &nbsp;·&nbsp; Powered by arXiv + GPT-5.4 &nbsp;·&nbsp; Last 2 months retained
+</footer>
 
-                reports.sort().reverse();
-                
-                reports.forEach(file => {
-                    const date = file.replace('.html', '').replace(/_/g, '-');
-                    const a = document.createElement('a');
-                    a.href = 'daily_html/' + file;
-                    a.textContent = '📄 ' + date;
-                    a.className = 'block bg-white p-4 rounded shadow hover:bg-teal-50 transition';
-                    list.appendChild(a);
-                });
-            } catch (err) {
-                list.innerHTML = '<p class="text-center text-red-500">Error: ' + err.message + '</p>';
-            }
-        }
-        document.addEventListener('DOMContentLoaded', loadReports);
-    </script>
+<script>
+async function load() {
+    const el = document.getElementById('reports');
+    try {
+        const r = await fetch('reports.json');
+        const files = await r.json();
+        if (!files || !files.length) { el.innerHTML='<div class="empty"><h3>No reports yet</h3></div>'; return; }
+        el.innerHTML = '';
+        files.forEach(f => {
+            const d = f.replace('.html','').replace(/_/g,'-');
+            const a = document.createElement('a');
+            a.href = './daily_html/' + f;
+            a.className = 'report-card';
+            a.innerHTML = `<div class="report-date">${d}</div><div class="report-label"><i class="fas fa-fire"></i> View report →</div>`;
+            el.appendChild(a);
+        });
+    } catch(e) {
+        el.innerHTML = '<div class="empty"><h3>Error loading reports</h3><p>' + e.message + '</p></div>';
+    }
+}
+document.addEventListener('DOMContentLoaded', load);
+</script>
+
 </body>
 </html>

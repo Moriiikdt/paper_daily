@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
 Unified fetch + filter + rate + generate pipeline.
-Daily-only: fetches yesterday's papers, generates HTML report.
+Daily-only: fetches today's papers, generates HTML report.
 Top-10 cited papers from past year are included once per run.
 """
 
 import os, sys, json, time, logging, arxiv, requests
 from datetime import date, datetime, timedelta, timezone
-from typing import Optional, Any
+from typing import Optional
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("pipeline")
@@ -18,15 +18,14 @@ OPENAI_API_BASE_URL = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1").
 OPENAI_API_URL      = f"{OPENAI_API_BASE_URL}/chat/completions"
 OPENAI_MODEL        = os.getenv("OPENAI_MODEL", "gpt-5.4")
 
-PROJECT_ROOT     = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-JSON_DIR          = os.path.join(PROJECT_ROOT, "daily_json")
-HTML_DIR          = os.path.join(PROJECT_ROOT, "daily_html")
-TEMPLATE_DIR      = os.path.join(PROJECT_ROOT, "templates")
-TEMPLATE_NAME     = "paper_template.html"
-REPORTS_PATH      = os.path.join(PROJECT_ROOT, "reports.json")
-DATA_RETENTION    = 60   # days (2 months)
+PROJECT_ROOT    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+JSON_DIR        = os.path.join(PROJECT_ROOT, "daily_json")
+HTML_DIR        = os.path.join(PROJECT_ROOT, "daily_html")
+TEMPLATE_DIR    = os.path.join(PROJECT_ROOT, "templates")
+TEMPLATE_NAME   = "paper_template.html"
+REPORTS_PATH    = os.path.join(PROJECT_ROOT, "reports.json")
+DATA_RETENTION  = 60   # days
 
-# arXiv categories most likely to contain audio/speech/Omni papers
 TARGET_CATEGORIES = ["cs.CL", "cs.AI", "cs.LG", "cs.SD", "eess.AS", "cs.MM", "cs.CV"]
 
 RESEARCH_TOPICS = """The user is interested in papers related to:
@@ -41,7 +40,7 @@ RESEARCH_TOPICS = """The user is interested in papers related to:
 def llm_call(prompt: str,
              max_tokens: int = 200,
              temperature: float = 0.1,
-             retry_backoff: tuple = (2, 4, 8, 16, 32)) -> Optional[str]:
+             retry_backoff: tuple = (3, 6, 12, 24, 48)) -> Optional[str]:
     """Call LLM with exponential-backoff retry on transient errors."""
     if not OPENAI_API_KEY:
         log.error("OPENAI_API_KEY not set"); return None
@@ -64,7 +63,7 @@ def llm_call(prompt: str,
         try:
             resp = requests.post(OPENAI_API_URL, headers=headers, json=payload, timeout=180)
             if resp.status_code == 429:
-                log.warning("  ⚠ 429 rate-limit")
+                log.warning("  ⚠ 429 rate-limit, backing off")
                 continue
             if resp.status_code >= 500:
                 log.warning(f"  ⚠ Server error {resp.status_code}")
@@ -102,7 +101,7 @@ def fetch_papers(specified_date: date) -> list:
         try:
             search = arxiv.Search(
                 query=query,
-                max_results=30,  # cap per-category to keep runtime manageable          
+                max_results=30,
                 sort_by=arxiv.SortCriterion.SubmittedDate,
             )
             cnt = 0
@@ -113,6 +112,7 @@ def fetch_papers(specified_date: date) -> list:
                         "title":          r.title,
                         "summary":        r.summary.strip(),
                         "url":            r.entry_id,
+                        "pdf_url":        r.pdf_url,
                         "published_date": r.published.isoformat(),
                         "updated_date":   r.updated.isoformat(),
                         "categories":     r.categories,
@@ -165,12 +165,13 @@ Example reply: 1, 3, 5
             log.info(f"  [{idx+1}/{len(papers)}] {sym} {p['title'][:55]}…")
             if ok:
                 filtered.append(p)
-        time.sleep(0.5)   # be gentle on the API
+        time.sleep(0.5)
     log.info(f"Filter: {len(filtered)}/{len(papers)} passed")
     return filtered
 
 
 # ── Step 3: Rate papers (batch of 3, cap at 30) ─────────────────────────────
+# NOTE: tldr field = Chinese summary (via zeabur.app gpt-5.4)
 
 RATING_TMPL = """You are an expert reviewer. Output a strict JSON array with one object per paper.
 Research interests: Audio LLM, Audio/Speech Perception & Understanding, Speech Synthesis, Omni Models.
@@ -179,9 +180,11 @@ Research interests: Audio LLM, Audio/Speech Perception & Understanding, Speech S
 
 Output format (no markdown, JSON only):
 [
-  {{"idx":1,"tldr":"<2-sentence English summary>","relevance_score":8,"novelty_score":7,"clarity_score":8,"impact_score":9,"overall_priority_score":8}},
+  {{"idx":1,"tldr":"<2-3 sentence summary in Chinese / 中文摘要>","relevance_score":8,"novelty_score":7,"clarity_score":8,"impact_score":9,"overall_priority_score":8}},
   ...
-]"""
+]
+
+IMPORTANT: The "tldr" field MUST be in Chinese (Simplified Chinese). Use GPT-5.4 via the provided API endpoint."""
 
 ITEMS_TMPL = "Paper {i}: Title: {title}\\nAbstract: {abstract}"
 
@@ -193,7 +196,7 @@ def rate_papers(papers: list) -> list:
     if not papers:
         return []
 
-    papers = papers[:30]   # hard cap to avoid runaway API usage
+    papers = papers[:30]
     BATCH  = 3
     rated  = []
     for i in range(0, len(papers), BATCH):
@@ -287,10 +290,8 @@ def get_top_cited() -> list:
         return papers
     except json.JSONDecodeError as e:
         log.error(f"Top-cited parse error: {e}")
-        # Save as plain text fallback so the template can display it
         safe = resp.strip()
         try:
-            import json as _j
             with open(os.path.join(JSON_DIR, f"top_cited_fallback_{date.today().isoformat()}.txt"), "w") as _f:
                 _f.write(safe)
         except: pass
@@ -311,7 +312,7 @@ def cleanup(directory: str, days: int):
     log.info(f"Cleanup: removed {removed} old file(s) from {directory}")
 
 
-# ── HTML generation ──────────────────────────────────────────────────────────
+# ── HTML generation ────────────────────────────────────────────────────────────
 
 def generate_html(date_str: str, papers: list, top_cited: list):
     try:
@@ -345,7 +346,7 @@ def generate_html(date_str: str, papers: list, top_cited: list):
     log.info(f"Generated: {out}")
 
 
-# ── Index & list pages ───────────────────────────────────────────────────────
+# ── Index & list pages ─────────────────────────────────────────────────────────
 
 def generate_index_and_list():
     files = sorted(
@@ -424,7 +425,7 @@ def update_reports_and_pages():
     generate_index_and_list()
 
 
-# ── Process one date ─────────────────────────────────────────────────────────
+# ── Process one date ───────────────────────────────────────────────────────────
 
 def process(target_date: date, force: bool = False):
     """Fetch, filter, rate, and generate HTML for one date."""
@@ -460,14 +461,13 @@ def process(target_date: date, force: bool = False):
     return papers
 
 
-# ── Main ─────────────────────────────────────────────────────────────────────
+# ── Main ───────────────────────────────────────────────────────────────────────
 
 def main():
     log.info(f"Model: {OPENAI_MODEL}  |  API: {OPENAI_API_URL}")
     cleanup(JSON_DIR, DATA_RETENTION)
     cleanup(HTML_DIR, DATA_RETENTION)
 
-    # Only process today's date to keep runtime short
     today = date.today()
     process(today)
     log.info("Pipeline complete!")

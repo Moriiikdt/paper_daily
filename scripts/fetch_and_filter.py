@@ -17,11 +17,13 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 log = logging.getLogger("pipeline")
 
 # ── Config ───────────────────────────────────────────────────────────────────
-OPENAI_API_KEY   = os.getenv("OPENAI_API_KEY")
-OPENAI_API_BASE  = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1").rstrip("/")
-OPENAI_API_URL   = f"{OPENAI_API_BASE}/chat/completions"
-OPENAI_MODEL     = os.getenv("OPENAI_MODEL", "gpt-4")   # auto-detect below
+OPENAI_API_KEY    = os.getenv("OPENAI_API_KEY")
+# The gateway requires /v1/chat/completions path
+OPENAI_API_BASE_URL = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1").rstrip("/")
+OPENAI_API_URL      = f"{OPENAI_API_BASE_URL}/chat/completions"
+OPENAI_MODEL     = os.getenv("OPENAI_MODEL", "gpt-5.4")
 
+# --- OLD (to be replaced) ---, "https://api.openai.com/v1").rstrip("/")
 PROJECT_ROOT     = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 JSON_DIR         = os.path.join(PROJECT_ROOT, "daily_json")
 HTML_DIR         = os.path.join(PROJECT_ROOT, "daily_html")
@@ -43,7 +45,7 @@ RESEARCH_TOPICS = """The user is interested in papers related to:
 
 def detect_model() -> str:
     """Try known model names; return first that responds successfully."""
-    candidates = ["gpt-5.4", "gpt-4o", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"]
+    candidates = ["gpt-5.4", "gpt-5.4-mini", "gpt-5", "gpt-4o"]
     test_payload = {
         "model": "__test__",
         "messages": [{"role": "user", "content": "Reply OK"}],
@@ -52,11 +54,8 @@ def detect_model() -> str:
     for name in candidates:
         test_payload["model"] = name
         try:
-            resp = requests.post(OPENAI_API_URL,
-                                 headers={"Authorization": f"Bearer {OPENAI_API_KEY}",
-                                          "Content-Type": "application/json"},
-                                 json=test_payload, timeout=15)
-            if resp.status_code != 400:   # 400 = model unknown, anything else may work
+            resp = requests.post(OPENAI_API_URL, headers=headers, json=data, timeout=15)
+            if resp.status_code == 200:   # Only accept 200 OK
                 log.info(f"Using model: {name}")
                 return name
         except Exception:
@@ -79,11 +78,6 @@ def llm_call(prompt: str,
         "Content-Type": "application/json",
     }
     data = {
-        "model": OPENAI_MODEL,
-        "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": max_tokens,
-        "temperature": temperature,
-    }
 
     for attempt, wait in enumerate([0] + list(retry_backoff)):
         if wait > 0:
@@ -391,7 +385,7 @@ def main():
         if detected:
             OPENAI_MODEL = detected
 
-    log.info(f"Model: {OPENAI_MODEL} | API: {OPENAI_API_BASE}")
+    log.info(f"Model: {OPENAI_MODEL} | API: {OPENAI_API_BASE_URL}")
 
     cleanup(JSON_DIR, DATA_RETENTION)
     cleanup(HTML_DIR, DATA_RETENTION)

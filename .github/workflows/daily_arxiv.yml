@@ -10,6 +10,10 @@ on:
     paths-ignore:
       - 'README.md'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     if: github.actor != 'github-actions[bot]'
@@ -40,7 +44,6 @@ jobs:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         OPENAI_API_BASE: ${{ secrets.OPENAI_API_BASE }}
 
-    # ── Push changes: pull-rebase to handle concurrent runs ──────────────
     - name: Push changes
       run: |
         git config --local user.name "github-actions[bot]"
@@ -49,9 +52,7 @@ jobs:
         if git diff --cached --quiet; then
           echo "No changes to commit"
         else
-          # Pull-rebase to handle race with other runs
           git pull --rebase origin ${{ github.ref }} || true
-          # Amend so the commit shows bot as author → prevents self-trigger
           git commit --amend --no-edit --allow-empty
           git push origin ${{ github.ref }}
         fi

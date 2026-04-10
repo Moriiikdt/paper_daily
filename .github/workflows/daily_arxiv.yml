@@ -8,14 +8,13 @@ on:
     branches:
       - main
 
-# Only one run at a time; cancel stale in-progress runs
 concurrency:
   group: arxiv-daily-deploy
   cancel-in-progress: true
 
 jobs:
   build:
-    # Prevent self-trigger: skip if the last commit was made by github-actions[bot]
+    # Self-trigger guard: skip if last commit was by github-actions[bot]
     if: >-
       github.actor != 'github-actions[bot]' &&
       github.event_name != 'push' ||
@@ -28,6 +27,7 @@ jobs:
       contents: write
       pages: write
       id-token: write
+    timeout-minutes: 30
 
     steps:
     - name: Checkout
@@ -44,29 +44,25 @@ jobs:
     - name: Install dependencies
       run: pip install arxiv requests jinja2 beautifulsoup4 lxml
 
-    - name: Run pipeline (daily only)
-      run: python scripts/fetch_and_filter.py >> $GITHUB_STEP_SUMMARY 2>&1
-      env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        OPENAI_API_BASE: ${{ secrets.OPENAI_API_BASE }}
+    - name: Run pipeline
+      run: python scripts/fetch_and_filter.py
 
     - name: Push changes
       run: |
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-        # Remove generated files that should stay untracked
+        # Remove any generated files that may have gotten tracked
         git restore --source=HEAD -- index.html list.html reports.json 2>/dev/null || true
         rm -f index.html list.html reports.json
         git add -A
         if git diff --cached --quiet; then
           echo "No changes to commit"
         else
-          # Fetch latest remote, reset local to it, then apply staged changes
+          # Fetch latest remote and reset hard, then apply our staged changes
           git fetch --depth=1 origin main
           git reset --hard origin/main
           git add -A
-          git commit -m "$(git log -1 --format='%s' | head -1)" || true
-          # Use force-with-lease to protect against races
+          git commit -m "Update papers $(date -u +'%Y-%m-%d')" || true
           git push origin main --force-with-lease || echo "Push skipped (concurrent run)"
         fi
 

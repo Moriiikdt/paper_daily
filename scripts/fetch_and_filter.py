@@ -102,7 +102,7 @@ def fetch_papers(specified_date: date) -> list:
         try:
             search = arxiv.Search(
                 query=query,
-                max_results=30,
+                max_results=10,
                 sort_by=arxiv.SortCriterion.SubmittedDate,
             )
             cnt = 0
@@ -233,7 +233,7 @@ def rate_papers(papers: list) -> list:
     if not papers:
         return []
 
-    papers = papers[:30]
+    papers = papers[:10]
     BATCH  = 2  # smaller batch = more reliable, especially for Chinese
     rated  = []
     for i in range(0, len(papers), BATCH):
@@ -245,7 +245,7 @@ def rate_papers(papers: list) -> list:
                 abstract=p["summary"][:400],
             ) for j, p in enumerate(batch)
         )
-        resp = llm_call(RATING_TMPL.format(papers_block=block), max_tokens=3000)
+        resp = llm_call(RATING_TMPL.format(papers_block=block), max_tokens=1500)
 
         if resp:
             try:

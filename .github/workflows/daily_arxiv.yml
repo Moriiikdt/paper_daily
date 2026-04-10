@@ -40,7 +40,7 @@ jobs:
       run: pip install arxiv requests jinja2 beautifulsoup4 lxml
 
     - name: Run pipeline
-      run: python scripts/fetch_and_filter.py
+      run: python scripts/fetch_and_filter.py --force
 
     # ── CRITICAL: Upload artifact BEFORE git push ──────────────────────────
     # git reset --hard in the push step would wipe generated files,

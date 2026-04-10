@@ -1,6 +1,5 @@
+# Generated data - managed by GitHub Actions
+daily_json/
+daily_html/
 __pycache__/
 *.pyc
-.venv/
-venv/
-*.egg-info/
-.DS_Store

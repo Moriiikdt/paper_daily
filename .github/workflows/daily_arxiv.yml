@@ -2,8 +2,8 @@ name: Daily Audio/Speech AI Papers
 
 on:
   schedule:
-    - cron: "0 1 * * *"   # Run at 01:00 UTC daily
-  workflow_dispatch:       # Manual trigger
+    - cron: "0 1 * * *"
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -12,7 +12,6 @@ on:
 
 jobs:
   build:
-    # Skip if triggered by our own bot commit (prevents infinite loop)
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     permissions:
@@ -21,7 +20,7 @@ jobs:
       id-token: write
 
     steps:
-    - name: Checkout repository
+    - name: Checkout
       uses: actions/checkout@v4
       with:
         token: ${{ secrets.GH_PAT }}
@@ -33,31 +32,27 @@ jobs:
         python-version: '3.11'
 
     - name: Install dependencies
-      run: pip install feedparser requests beautifulsoup4 lxml
+      run: pip install arxiv requests jinja2 beautifulsoup4 lxml
 
-    # ── Run paper pipeline ──────────────────────────────────────────────
-    - name: Run paper fetcher
+    - name: Run pipeline
       run: python scripts/fetch_and_filter.py >> $GITHUB_STEP_SUMMARY 2>&1
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         OPENAI_API_BASE: ${{ secrets.OPENAI_API_BASE }}
+        # Model auto-detected by script
 
-    # ── Prevent self-trigger: amend commit so the next run sees bot actor
-    # After this amend, github.actor will be 'github-actions[bot]' and
-    # the `if: github.actor != 'github-actions[bot]'` guard will skip it.
-    - name: Mark as bot commit
+    - name: Push changes
       run: |
         git config --local user.name "github-actions[bot]"
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git add -A
         if git diff --cached --quiet; then
-          echo "No changes to commit"
+          echo "No changes"
         else
           git commit --amend --no-edit --allow-empty
           git push origin ${{ github.ref }}
         fi
 
-    # ── Deploy GitHub Pages ─────────────────────────────────────────────
     - name: Setup Pages
       uses: actions/configure-pages@v4
 
@@ -66,6 +61,6 @@ jobs:
       with:
         path: '.'
 
-    - name: Deploy to GitHub Pages
+    - name: Deploy
       id: deployment
       uses: actions/deploy-pages@v4

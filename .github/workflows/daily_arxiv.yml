@@ -18,6 +18,10 @@ jobs:
     if: >-
       github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY:  ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_API_BASE: ${{ secrets.OPENAI_API_BASE }}
+      OPENAI_MODEL:    gpt-5.4
     permissions:
       contents: write
       pages: write

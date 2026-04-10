@@ -102,7 +102,7 @@ def fetch_papers(specified_date: date) -> list:
         try:
             search = arxiv.Search(
                 query=query,
-                max_results=15,
+                max_results=5,
                 sort_by=arxiv.SortCriterion.SubmittedDate,
             )
             cnt = 0
@@ -168,9 +168,9 @@ Example reply: 1, 3, 5
                 filtered.append(p)
         time.sleep(0.5)
     log.info(f"Filter: {len(filtered)}/{len(papers)} passed")
-    # Cap at 20 for rate_papers to balance quality and speed
-    filtered = filtered[:20]
-    log.info(f"  → Capped to top 20 for rating")
+    # Cap at 12 for rate_papers to keep total API calls manageable
+    filtered = filtered[:12]
+    log.info(f"  → Capped to top 12 for rating")
     return filtered
 
 
@@ -236,7 +236,7 @@ def rate_papers(papers: list) -> list:
     if not papers:
         return []
 
-    papers = papers[:15]
+    papers = papers[:6]
     BATCH  = 2  # smaller batch = more reliable, especially for Chinese
     rated  = []
     for i in range(0, len(papers), BATCH):

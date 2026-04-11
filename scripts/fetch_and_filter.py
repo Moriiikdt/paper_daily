@@ -339,7 +339,19 @@ def process(target_date: date, force: bool = False):
 
 # ── Main ────────────────────────────────────────────────────────────────────
 
-def main():
+def print("Python version:", __import__('sys').version, flush=True)
+print("sys.path:", __import__('sys').path, flush=True)
+print("cwd:", __import__('os').getcwd(), flush=True)
+
+# Check dependencies
+for mod in ['arxiv', 'requests', 'jinja2', 'bs4']:
+    try:
+        __import__(mod)
+        print(f"  {mod}: OK", flush=True)
+    except ImportError as e:
+        print(f"  {mod}: MISSING - {e}", flush=True)
+
+main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--date", default=None)

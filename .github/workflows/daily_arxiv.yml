@@ -66,28 +66,25 @@ jobs:
           git push origin main || echo "Push skipped"
         fi
 
-    # Force-add gitignored generated files (daily_html/ is in .gitignore but must be deployed)
-    - name: Stage generated HTML for deployment
+    # Copy generated files to public/ (git-tracked) for deployment
+    - name: Stage generated files for deployment
       run: |
-        echo "=== Files in working directory BEFORE staging ==="
-        find . -maxdepth 3 -type f | grep -v ".git/" | sort
-        echo ""
-        echo "=== daily_html/ ==="
-        ls -la daily_html/ 2>/dev/null || echo "daily_html/ NOT FOUND"
-        echo "=== daily_json/ ==="
-        ls -la daily_json/ 2>/dev/null || echo "daily_json/ NOT FOUND"
-        echo ""
-        echo "=== Staging files ==="
-        git add -f daily_html/ daily_json/ || echo "  -> daily_html/json add failed or empty"
-        git add -f index.html list.html reports.json || echo "  -> static files add failed"
-        echo ""
-        echo "=== Staged files ==="
-        git status --short
+        # Copy generated files into public/ (git-tracked, will override gitignored dirs)
+        mkdir -p public/daily_html public/daily_json
+        cp -r daily_html/* public/daily_html/ 2>/dev/null && echo "Copied daily_html/ ($(ls daily_html/ | wc -l) files)" || echo "daily_html/ empty or missing"
+        cp -r daily_json/* public/daily_json/ 2>/dev/null && echo "Copied daily_json/ ($(ls daily_json/ | wc -l) files)" || echo "daily_json/ empty or missing"
+        cp -f index.html list.html reports.json public/
+        echo "=== public/ contents ==="
+        ls -la public/
+        ls -la public/daily_html/ 2>/dev/null || echo "public/daily_html/ empty"
+        ls -la public/daily_json/ 2>/dev/null || echo "public/daily_json/ empty"
+        echo "=== reports.json ==="
+        cat public/reports.json
 
     - name: Upload Pages artifact
       uses: actions/upload-pages-artifact@v3
       with:
-        path: '.'
+        path: 'public'
 
     - name: Setup Pages
       uses: actions/configure-pages@v4

@@ -172,20 +172,28 @@ def evaluate_papers(papers: list) -> list:
             if fence in cleaned:
                 cleaned = cleaned.split(fence)[1].split("```")[0]
         items = json.loads(cleaned.strip())
-        # Handle wrapping (LLM sometimes wraps in {"data": [...]})
-        if isinstance(items, dict) and "papers" in items:
-            items = items["papers"]
-        elif isinstance(items, dict) and "results" in items:
-            items = items["results"]
-        # Handle single-object return
+        log.info(f"LLM raw response type: {type(items).__name__}, keys: {list(items.keys()) if isinstance(items, dict) else 'N/A (list)'}")
+        # Handle nested: {"success":true,"data":[...]} or {"papers":[...]} etc
+        if isinstance(items, dict):
+            for key in ["papers", "results", "data", "items", "evaluations"]:
+                if key in items:
+                    items = items[key]
+                    log.info(f"  Extracted nested key '{key}': {type(items).__name__}")
+                    break
+        # Single object -> list
         if isinstance(items, dict):
             items = [items]
         if not isinstance(items, list):
-            raise ValueError(f"Expected list, got {type(items).__name__}")
-        smap = {item["idx"]: item for item in items}
+            raise ValueError(f"Expected list, got {type(items).__name__}: {str(items)[:200]}")
+        # Extract idx field from each item
+        smap = {}
+        for item in items:
+            if isinstance(item, dict) and "idx" in item:
+                smap[item["idx"]] = item
+        log.info(f"  Parsed {len(smap)} paper entries")
     except (json.JSONDecodeError, ValueError) as e:
         log.error(f"JSON parse error: {e}")
-        log.info(f"Response (first 800): {resp[:800]}")
+        log.info(f"Response (first 1000): {resp[:1000]}")
         return []
 
     rated = []
@@ -245,15 +253,19 @@ def get_top_cited() -> list:
             if fence in cleaned:
                 cleaned = cleaned.split(fence)[1].split("```")[0]
         data = json.loads(cleaned.strip())
-        if isinstance(data, dict) and "papers" in data:
-            data = data["papers"]
-        elif isinstance(data, dict) and "results" in data:
-            data = data["results"]
+        log.info(f"Top-cited response: {type(data).__name__}, keys: {list(data.keys()) if isinstance(data, dict) else 'list'}")
+        if isinstance(data, dict):
+            for key in ["papers", "results", "data", "items", "top_papers"]:
+                if key in data:
+                    data = data[key]
+                    log.info(f"  Extracted '{key}': {type(data).__name__}")
+                    break
         if isinstance(data, dict):
             data = [data]
         return data if isinstance(data, list) else [data]
     except (json.JSONDecodeError, ValueError) as e:
         log.error(f"Top-cited parse error: {e}")
+        log.info(f"Response: {resp[:500]}")
         return [resp.strip()]
 
 

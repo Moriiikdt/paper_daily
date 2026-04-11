@@ -172,10 +172,20 @@ def evaluate_papers(papers: list) -> list:
             if fence in cleaned:
                 cleaned = cleaned.split(fence)[1].split("```")[0]
         items = json.loads(cleaned.strip())
+        # Handle wrapping (LLM sometimes wraps in {"data": [...]})
+        if isinstance(items, dict) and "papers" in items:
+            items = items["papers"]
+        elif isinstance(items, dict) and "results" in items:
+            items = items["results"]
+        # Handle single-object return
+        if isinstance(items, dict):
+            items = [items]
+        if not isinstance(items, list):
+            raise ValueError(f"Expected list, got {type(items).__name__}")
         smap = {item["idx"]: item for item in items}
-    except json.JSONDecodeError as e:
+    except (json.JSONDecodeError, ValueError) as e:
         log.error(f"JSON parse error: {e}")
-        log.info(f"Response (first 500): {resp[:500]}")
+        log.info(f"Response (first 800): {resp[:800]}")
         return []
 
     rated = []
@@ -234,8 +244,15 @@ def get_top_cited() -> list:
         for fence in ["```json", "```"]:
             if fence in cleaned:
                 cleaned = cleaned.split(fence)[1].split("```")[0]
-        return json.loads(cleaned.strip())
-    except json.JSONDecodeError as e:
+        data = json.loads(cleaned.strip())
+        if isinstance(data, dict) and "papers" in data:
+            data = data["papers"]
+        elif isinstance(data, dict) and "results" in data:
+            data = data["results"]
+        if isinstance(data, dict):
+            data = [data]
+        return data if isinstance(data, list) else [data]
+    except (json.JSONDecodeError, ValueError) as e:
         log.error(f"Top-cited parse error: {e}")
         return [resp.strip()]
 

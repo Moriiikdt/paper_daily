@@ -8,15 +8,12 @@ on:
     branches:
       - main
 
-# Only one workflow run at a time — cancel stale ones
 concurrency:
   group: arxiv-daily-deploy
   cancel-in-progress: true
 
 jobs:
   build:
-    # Self-trigger guard: skip if last commit was made by github-actions[bot
-    # (prevents infinite loop: bot push → workflow → bot push → ...)
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     env:
@@ -44,20 +41,25 @@ jobs:
     - name: Install dependencies
       run: pip install arxiv requests jinja2 beautifulsoup4 lxml
 
-    # ── Run pipeline FIRST ───────────────────────────────────────────────────
-    # This generates: reports.json, index.html, list.html, daily_html/*.html,
-    # daily_json/*.json in the repo root / working directory.
+    # ── Run pipeline FIRST ────────────────────────────────────────────────
+    # Generates: reports.json, index.html, list.html, daily_html/*.html,
+    #            daily_json/*.json in the working directory.
     - name: Run pipeline
       run: python scripts/fetch_and_filter.py --force
 
-    # ── Stage + commit + push reports.json (tracked in git) ─────────────────
-    # Only reports.json is tracked — it's a tiny JSON list of available reports.
-    # index.html and list.html are generated each run (not tracked).
+    # ── Stage reports.json (tracked in git) ─────────────────────────────
+    # Compare against origin/main (not local HEAD) to avoid false positives
+    # when local HEAD was a bot commit without generated files.
     - name: Commit and push reports.json
       run: |
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
 
+        # Fetch latest remote state
+        git fetch --depth=1 origin main
+
+        # Stage only reports.json against origin/main
+        git diff --stat origin/main reports.json | head -5
         git add reports.json
 
         if git diff --cached --quiet; then
@@ -67,8 +69,7 @@ jobs:
           git push origin main || echo "Push skipped (concurrent run)"
         fi
 
-    # ── Upload Pages artifact LAST (after all git ops) ─────────────────────
-    # Upload everything in the working directory (generated HTML, tracked files).
+    # ── Upload Pages artifact LAST ────────────────────────────────────────
     - name: Upload Pages artifact
       uses: actions/upload-pages-artifact@v3
       with:

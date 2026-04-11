@@ -102,7 +102,7 @@ def fetch_papers(specified_date: date) -> list:
         try:
             search = arxiv.Search(
                 query=query,
-                max_results=30,
+                max_results=15,
                 sort_by=arxiv.SortCriterion.SubmittedDate,
             )
             cnt = 0
@@ -136,7 +136,7 @@ def filter_papers(papers: list) -> list:
     if not papers:
         return []
 
-    BATCH = 5
+    BATCH = 10
     filtered = []
     for i in range(0, len(papers), BATCH):
         batch = papers[i : i + BATCH]
@@ -237,7 +237,7 @@ def rate_papers(papers: list) -> list:
         return []
 
     papers = papers[:6]
-    BATCH  = 2  # smaller batch = more reliable, especially for Chinese
+    BATCH  = 5  # rate batch = more reliable, especially for Chinese
     rated  = []
     for i in range(0, len(papers), BATCH):
         batch = papers[i : i + BATCH]

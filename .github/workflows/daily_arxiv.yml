@@ -66,6 +66,13 @@ jobs:
           git push origin main || echo "Push skipped"
         fi
 
+    # Force-add gitignored generated files (daily_html/ is in .gitignore but must be deployed)
+    - name: Stage generated HTML for deployment
+      run: |
+        git add -f daily_html/ daily_json/ || true
+        git add -f index.html list.html reports.json || true
+        git status --short
+
     - name: Upload Pages artifact
       uses: actions/upload-pages-artifact@v3
       with:

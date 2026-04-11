@@ -41,35 +41,31 @@ jobs:
     - name: Install dependencies
       run: pip install arxiv requests jinja2 beautifulsoup4 lxml
 
-    # ── Run pipeline FIRST ────────────────────────────────────────────────
-    # Generates: reports.json, index.html, list.html, daily_html/*.html,
-    #            daily_json/*.json in the working directory.
     - name: Run pipeline
       run: python scripts/fetch_and_filter.py --force
 
-    # ── Stage reports.json (tracked in git) ─────────────────────────────
-    # Compare against origin/main (not local HEAD) to avoid false positives
-    # when local HEAD was a bot commit without generated files.
+    - name: Debug generated files
+      run: |
+        echo "=== reports.json ==="
+        cat reports.json
+        echo "=== daily_html/ ==="
+        ls -la daily_html/ 2>/dev/null || echo "daily_html/ NOT FOUND"
+        echo "=== daily_json/ ==="
+        ls -la daily_json/ 2>/dev/null || echo "daily_json/ NOT FOUND"
+
     - name: Commit and push reports.json
       run: |
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-
-        # Fetch latest remote state
         git fetch --depth=1 origin main
-
-        # Stage only reports.json against origin/main
-        git diff --stat origin/main reports.json | head -5
         git add reports.json
-
         if git diff --cached --quiet; then
           echo "No change to reports.json"
         else
           git commit -m "Update papers $(date -u +'%Y-%m-%d')"
-          git push origin main || echo "Push skipped (concurrent run)"
+          git push origin main || echo "Push skipped"
         fi
 
-    # ── Upload Pages artifact LAST ────────────────────────────────────────
     - name: Upload Pages artifact
       uses: actions/upload-pages-artifact@v3
       with:

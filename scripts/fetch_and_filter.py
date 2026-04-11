@@ -9,7 +9,7 @@ import os, sys, json, time, logging, arxiv, requests
 from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
-import logging
+# Force unbuffered output so GitHub Actions logs appear immediately
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", stream=sys.stdout)
 log = logging.getLogger("pipeline")
 
@@ -29,13 +29,6 @@ DATA_RETENTION = 60
 
 TARGET_CATEGORIES = ["cs.CL", "cs.AI", "cs.LG", "cs.SD", "eess.AS", "cs.MM", "cs.CV"]
 
-RESEARCH_TOPICS = """Papers related to:
-1. Audio Large Language Models (Audio LLM, Audio Foundation Models)
-2. Audio/Speech Perception and Understanding (speech recognition, audio understanding)
-3. Audio/Speech Reasoning (reasoning over audio, audio chain-of-thought)
-4. Speech Synthesis (TTS, voice conversion, speech generation)
-5. Omni Models (any-domain unified multimodal models including audio)"""
-
 # ── LLM Caller ───────────────────────────────────────────────────────────────
 
 def llm_call(prompt: str, max_tokens: int = 3000, temperature: float = 0.1) -> Optional[str]:
@@ -53,27 +46,27 @@ def llm_call(prompt: str, max_tokens: int = 3000, temperature: float = 0.1) -> O
 
     for attempt, wait in enumerate([0, 5, 15, 30]):
         if wait > 0:
-            log.info(f"  ↻ Retry {attempt+1}/4 after {wait}s…")
+            log.info(f"  Retry {attempt+1}/4 after {wait}s")
             time.sleep(wait)
         try:
             resp = requests.post(OPENAI_API_URL, headers=headers, json=payload, timeout=300)
             if resp.status_code == 429:
-                log.warning("  ⚠ 429 rate-limit")
+                log.warning("429 rate-limit")
                 continue
             if resp.status_code >= 500:
-                log.warning(f"  ⚠ Server error {resp.status_code}")
+                log.warning(f"Server error {resp.status_code}")
                 continue
             if resp.status_code != 200:
-                log.warning(f"  ⚠ HTTP {resp.status_code}: {resp.text[:200]}")
+                log.warning(f"HTTP {resp.status_code}: {resp.text[:200]}")
                 continue
             content = resp.json().get("choices", [{}])[0].get("message", {}).get("content", "").strip()
             if not content:
-                log.warning("  ⚠ Empty response"); continue
+                log.warning("Empty response"); continue
             return content
         except requests.exceptions.Timeout:
-            log.warning(f"  ⚠ Timeout attempt {attempt+1}")
+            log.warning(f"Timeout attempt {attempt+1}")
         except Exception as e:
-            log.warning(f"  ⚠ Error: {e}")
+            log.warning(f"Error: {e}")
     log.error("All retries exhausted"); return None
 
 
@@ -83,7 +76,7 @@ def fetch_papers(target_date: date) -> list:
     end   = datetime.combine(target_date, datetime.min.time()) - timedelta(hours=6)
     start = end - timedelta(days=2)
     start_str, end_str = start.strftime("%Y%m%d%H%M"), end.strftime("%Y%m%d%H%M")
-    log.info(f"Fetching {start_str} → {end_str}")
+    log.info(f"Fetching {start_str} -> {end_str}")
 
     client = arxiv.Client()
     all_papers, seen = [], set()
@@ -108,12 +101,12 @@ def fetch_papers(target_date: date) -> list:
                     cnt += 1
             log.info(f"  {cat}: +{cnt}")
         except Exception as e:
-            log.warning(f"  {cat}: error – {e}")
+            log.warning(f"  {cat}: error - {e}")
     log.info(f"Total: {len(all_papers)} papers")
     return all_papers
 
 
-# ── One-shot Evaluate (filter + rate + Chinese TLDR) ───────────────────────
+# ── One-shot Evaluate (filter + rate + Chinese TLDR) ────────────────────────
 
 UNIFIED_TMPL = """You are an expert AI research paper reviewer.
 
@@ -167,14 +160,13 @@ def evaluate_papers(papers: list) -> list:
     )
     prompt = UNIFIED_TMPL.format(papers_block=block)
 
-    log.info(f"Sending {len(papers)} papers to LLM for evaluation…")
+    log.info(f"Sending {len(papers)} papers to LLM for evaluation...")
     resp = llm_call(prompt, max_tokens=4000, temperature=0.1)
     if not resp:
         log.error("LLM call failed"); return []
 
     # Parse JSON from response
     try:
-        # Strip markdown fences
         cleaned = resp
         for fence in ["```json", "```"]:
             if fence in cleaned:
@@ -193,7 +185,7 @@ def evaluate_papers(papers: list) -> list:
         tldr = info.get("tldr", "")
 
         if not rel:
-            log.info(f"  [{i+1}/{len(papers)}] ✗ {p['title'][:55]}…")
+            log.info(f"  [{i+1}/{len(papers)}] SKIP {p['title'][:55]}")
             continue
 
         p["tldr"]                  = tldr
@@ -204,8 +196,8 @@ def evaluate_papers(papers: list) -> list:
         p["overall_priority_score"] = info.get("overall_priority_score", 5)
 
         has_zh = any('\u4e00' <= c <= '\u9fff' for c in tldr)
-        zh_mark = "✅ZH" if has_zh else "❌EN"
-        log.info(f"  [{i+1}/{len(papers)}] ★{p['overall_priority_score']}/10 {zh_mark} {p['title'][:45]}…")
+        zh_mark = "ZH" if has_zh else "EN"
+        log.info(f"  [{i+1}/{len(papers)}] STAR{ p['overall_priority_score']}/10 [{zh_mark}] {p['title'][:45]}")
         rated.append(p)
 
     log.info(f"Relevant: {len(rated)}/{len(papers)} papers")
@@ -214,7 +206,7 @@ def evaluate_papers(papers: list) -> list:
 
 # ── Top 10 Cited ────────────────────────────────────────────────────────────
 
-TOP_PROMPT = """Identify the TOP 10 most cited AI/ML papers from {prev_year}–{curr_year} related to:
+TOP_PROMPT = """Identify the TOP 10 most cited AI/ML papers from {prev_year}-{curr_year} related to:
 1. Audio Large Language Models / Audio Foundation Models
 2. Audio/Speech Perception & Understanding
 3. Speech Synthesis (TTS, voice conversion)
@@ -226,7 +218,7 @@ Output ONLY valid JSON array (no markdown, no explanation):
   ...9 more, sorted by citations descending
 ]
 
-Only papers from {prev_year}–{curr_year}. If uncertain, provide best estimate."""
+Only papers from {prev_year}-{curr_year}. If uncertain, provide best estimate."""
 
 
 def get_top_cited() -> list:
@@ -276,7 +268,7 @@ def generate_html(date_str: str, papers: list, top_cited: list):
     try:
         rdate = date.fromisoformat(date_str)
         fmt   = rdate.strftime("%Y_%m_%d")
-        title = f"Audio/Speech AI Papers – {rdate.strftime('%B %d, %Y')}"
+        title = f"Audio/Speech AI Papers - {rdate.strftime('%B %d, %Y')}"
     except ValueError:
         fmt   = date.today().strftime("%Y_%m_%d")
         title = "Audio/Speech AI Daily"
@@ -297,7 +289,7 @@ def generate_html(date_str: str, papers: list, top_cited: list):
     log.info(f"Generated: {out}")
 
 
-# ── Reports ─────────────────────────────────────────────────────────────────
+# ── Reports ──────────────────────────────────────────────────────────────────
 
 def update_reports():
     files = sorted(
@@ -306,13 +298,15 @@ def update_reports():
     )
     with open(REPORTS_PATH, "w") as f:
         json.dump(files, f, indent=4)
-    log.info(f"reports.json: {len(files)} reports — {files}")
+    log.info(f"reports.json: {len(files)} reports - {files}")
 
 
 # ── Process one date ─────────────────────────────────────────────────────────
 
 def process(target_date: date, force: bool = False):
-    log.info(f"\n{'='*60}\n  {target_date}\n{'='*60}")
+    log.info(f"{'='*60}")
+    log.info(f"  Processing: {target_date}")
+    log.info(f"{'='*60}")
     jpath = os.path.join(JSON_DIR, f"{target_date.isoformat()}.json")
     os.makedirs(JSON_DIR, exist_ok=True)
 
@@ -337,31 +331,23 @@ def process(target_date: date, force: bool = False):
     return papers
 
 
-# ── Main ────────────────────────────────────────────────────────────────────
+# ── Main ─────────────────────────────────────────────────────────────────────
 
-def print("Python version:", __import__('sys').version, flush=True)
-print("sys.path:", __import__('sys').path, flush=True)
-print("cwd:", __import__('os').getcwd(), flush=True)
-
-# Check dependencies
-for mod in ['arxiv', 'requests', 'jinja2', 'bs4']:
-    try:
-        __import__(mod)
-        print(f"  {mod}: OK", flush=True)
-    except ImportError as e:
-        print(f"  {mod}: MISSING - {e}", flush=True)
-
-main():
+if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--date", default=None)
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
 
-    log.info(f"Model: {OPENAI_MODEL}  |  API: {OPENAI_API_URL}")
+    log.info(f"Model: {OPENAI_MODEL}")
+    log.info(f"API: {OPENAI_API_URL}")
+    log.info(f"PROJECT_ROOT: {PROJECT_ROOT}")
+    log.info(f"API key present: {bool(OPENAI_API_KEY)}")
+
     cleanup(JSON_DIR, DATA_RETENTION)
     cleanup(HTML_DIR, DATA_RETENTION)
 
     target = date.fromisoformat(args.date) if args.date else date.today()
     process(target, force=args.force)
-    log.info("Done!")
+    log.info("Pipeline complete!")

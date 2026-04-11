@@ -42,7 +42,10 @@ jobs:
       run: pip install arxiv requests jinja2 beautifulsoup4 lxml
 
     - name: Run pipeline
-      run: python scripts/fetch_and_filter.py --force
+      run: |
+        set -x
+        python -u scripts/fetch_and_filter.py --force
+        echo "Exit code: $?"
 
     - name: Debug generated files
       run: |

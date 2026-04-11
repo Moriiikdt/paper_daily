@@ -9,7 +9,8 @@ import os, sys, json, time, logging, arxiv, requests
 from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+import logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", stream=sys.stdout)
 log = logging.getLogger("pipeline")
 
 # ── API Config ──────────────────────────────────────────────────────────────

@@ -44,9 +44,9 @@ def llm_call(prompt: str, max_tokens: int = 3000, temperature: float = 0.1) -> O
         "temperature": temperature,
     }
 
-    for attempt, wait in enumerate([0, 5, 15, 30]):
+    for attempt, wait in enumerate([0, 10, 30, 60, 120]):
         if wait > 0:
-            log.info(f"  Retry {attempt+1}/4 after {wait}s")
+            log.info(f"  Retry {attempt+1}/5 after {wait}s")
             time.sleep(wait)
         try:
             resp = requests.post(OPENAI_API_URL, headers=headers, json=payload, timeout=300)
@@ -172,7 +172,12 @@ def evaluate_papers(papers: list) -> list:
             if fence in cleaned:
                 cleaned = cleaned.split(fence)[1].split("```")[0]
         items = json.loads(cleaned.strip())
-        log.info(f"LLM raw response type: {type(items).__name__}, keys: {list(items.keys()) if isinstance(items, dict) else 'N/A (list)'}")
+        log.info(f"LLM raw response type: {type(items).__name__}")
+        if isinstance(items, str):
+            log.error(f"LLM returned a string instead of JSON list: {items[:200]}")
+            raise ValueError("LLM returned string, not JSON list")
+        if not isinstance(items, (dict, list)):
+            raise ValueError(f"Unexpected type: {type(items).__name__}")
         # Handle nested: {"success":true,"data":[...]} or {"papers":[...]} etc
         if isinstance(items, dict):
             for key in ["papers", "results", "data", "items", "evaluations"]:
@@ -185,11 +190,16 @@ def evaluate_papers(papers: list) -> list:
             items = [items]
         if not isinstance(items, list):
             raise ValueError(f"Expected list, got {type(items).__name__}: {str(items)[:200]}")
-        # Extract idx field from each item
+        # Extract idx field from each item (defensive)
         smap = {}
-        for item in items:
-            if isinstance(item, dict) and "idx" in item:
-                smap[item["idx"]] = item
+        for raw_item in items:
+            try:
+                if isinstance(raw_item, dict) and "idx" in raw_item:
+                    smap[raw_item["idx"]] = raw_item
+                else:
+                    log.warning(f"  Skipping non-dict item: {str(raw_item)[:80]}")
+            except (TypeError, KeyError) as e:
+                log.warning(f"  Skipping item due to {e}: {str(raw_item)[:80]}")
         log.info(f"  Parsed {len(smap)} paper entries")
     except (json.JSONDecodeError, ValueError) as e:
         log.error(f"JSON parse error: {e}")

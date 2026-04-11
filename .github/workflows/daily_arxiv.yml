@@ -41,7 +41,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install arxiv requests jinja2 beautifulsoup4 lxml
-        python -c "import arxiv, requests, jinja2, bs4; print('All deps OK')"
+
 
 
     - name: Run pipeline
@@ -50,14 +50,6 @@ jobs:
         python -u scripts/fetch_and_filter.py --force
         echo "Exit code: $?"
 
-    - name: Debug generated files
-      run: |
-        echo "=== reports.json ==="
-        cat reports.json
-        echo "=== daily_html/ ==="
-        ls -la daily_html/ 2>/dev/null || echo "daily_html/ NOT FOUND"
-        echo "=== daily_json/ ==="
-        ls -la daily_json/ 2>/dev/null || echo "daily_json/ NOT FOUND"
 
     - name: Commit and push reports.json
       run: |
@@ -80,11 +72,9 @@ jobs:
         cp -r daily_html/* public/daily_html/ 2>/dev/null && echo "Copied daily_html/ ($(ls daily_html/ | wc -l) files)" || echo "daily_html/ empty or missing"
         cp -r daily_json/* public/daily_json/ 2>/dev/null && echo "Copied daily_json/ ($(ls daily_json/ | wc -l) files)" || echo "daily_json/ empty or missing"
         cp -f index.html list.html reports.json public/
-        echo "=== public/ contents ==="
         ls -la public/
         ls -la public/daily_html/ 2>/dev/null || echo "public/daily_html/ empty"
         ls -la public/daily_json/ 2>/dev/null || echo "public/daily_json/ empty"
-        echo "=== reports.json ==="
         cat public/reports.json
 
     - name: Upload Pages artifact

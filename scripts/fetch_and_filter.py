@@ -162,6 +162,7 @@ def evaluate_papers(papers: list) -> list:
             block_parts.append(PAPERS_BLOCK_TMPL.format(i=i+1, title=title, abstract=abstract[:600]))
         except Exception as e:
             log.warning(f"  Paper {i+1} skipped: {e} | type: {type(p).__name__} | preview: {str(p)[:100]}")
+    block = "\n\n".join(block_parts)
     prompt = UNIFIED_TMPL.format(papers_block=block)
     log.info(f"Sending {len(papers)} papers to LLM for evaluation...")
     resp = llm_call(prompt, max_tokens=4000, temperature=0.1)

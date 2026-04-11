@@ -142,9 +142,9 @@ Papers:
 
 JSON array:"""
 
-PAPERS_BLOCK_TMPL = """Paper {i}:
-Title: {title}
-Abstract: {abstract[:600]}"""
+PAPERS_BLOCK_TMPL = """Paper {{i}}:
+Title: {{title}}
+Abstract: {{abstract[:600]}}"""
 
 
 def evaluate_papers(papers: list) -> list:
@@ -154,12 +154,15 @@ def evaluate_papers(papers: list) -> list:
     if not papers:
         return []
 
-    block = "\n\n".join(
-        PAPERS_BLOCK_TMPL.format(i=i+1, title=p["title"], abstract=p["summary"])
-        for i, p in enumerate(papers)
-    )
+    block_parts = []
+    for i, p in enumerate(papers):
+        try:
+            title = str(p.get("title", "Unknown Title")) if isinstance(p, dict) else str(p)
+            abstract = str(p.get("summary", "")) if isinstance(p, dict) else str(p)
+            block_parts.append(PAPERS_BLOCK_TMPL.format(i=i+1, title=title, abstract=abstract[:600]))
+        except Exception as e:
+            log.warning(f"  Paper {i+1} skipped: {e} | type: {type(p).__name__} | preview: {str(p)[:100]}")
     prompt = UNIFIED_TMPL.format(papers_block=block)
-
     log.info(f"Sending {len(papers)} papers to LLM for evaluation...")
     resp = llm_call(prompt, max_tokens=4000, temperature=0.1)
     if not resp:

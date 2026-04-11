@@ -69,8 +69,19 @@ jobs:
     # Force-add gitignored generated files (daily_html/ is in .gitignore but must be deployed)
     - name: Stage generated HTML for deployment
       run: |
-        git add -f daily_html/ daily_json/ || true
-        git add -f index.html list.html reports.json || true
+        echo "=== Files in working directory BEFORE staging ==="
+        find . -maxdepth 3 -type f | grep -v ".git/" | sort
+        echo ""
+        echo "=== daily_html/ ==="
+        ls -la daily_html/ 2>/dev/null || echo "daily_html/ NOT FOUND"
+        echo "=== daily_json/ ==="
+        ls -la daily_json/ 2>/dev/null || echo "daily_json/ NOT FOUND"
+        echo ""
+        echo "=== Staging files ==="
+        git add -f daily_html/ daily_json/ || echo "  -> daily_html/json add failed or empty"
+        git add -f index.html list.html reports.json || echo "  -> static files add failed"
+        echo ""
+        echo "=== Staged files ==="
         git status --short
 
     - name: Upload Pages artifact

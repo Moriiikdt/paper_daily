@@ -8,20 +8,21 @@ on:
     branches:
       - main
 
+# Only one workflow run at a time — cancel stale ones
 concurrency:
   group: arxiv-daily-deploy
   cancel-in-progress: true
 
 jobs:
   build:
-    # Self-trigger guard: skip if the push commit was made by github-actions[bot]
-    if: >-
-      github.actor != 'github-actions[bot]'
+    # Self-trigger guard: skip if last commit was made by github-actions[bot
+    # (prevents infinite loop: bot push → workflow → bot push → ...)
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     env:
       OPENAI_API_KEY:  ${{ secrets.OPENAI_API_KEY }}
-      OPENAI_API_BASE: ${{ secrets.OPENAI_API_BASE }}
-      OPENAI_MODEL:    gpt-5.4
+      OPENAI_API_BASE:  ${{ secrets.OPENAI_API_BASE }}
+      OPENAI_MODEL:     gpt-5.4
     permissions:
       contents: write
       pages: write
@@ -43,43 +44,40 @@ jobs:
     - name: Install dependencies
       run: pip install arxiv requests jinja2 beautifulsoup4 lxml
 
+    # ── Run pipeline FIRST ───────────────────────────────────────────────────
+    # This generates: reports.json, index.html, list.html, daily_html/*.html,
+    # daily_json/*.json in the repo root / working directory.
     - name: Run pipeline
       run: python scripts/fetch_and_filter.py --force
 
-    # ── CRITICAL: Upload artifact BEFORE git push ──────────────────────────
-    # git reset --hard in the push step would wipe generated files,
-    # so Pages artifact must be uploaded first.
-    - name: Upload artifact for Pages
+    # ── Stage + commit + push reports.json (tracked in git) ─────────────────
+    # Only reports.json is tracked — it's a tiny JSON list of available reports.
+    # index.html and list.html are generated each run (not tracked).
+    - name: Commit and push reports.json
+      run: |
+        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+
+        git add reports.json
+
+        if git diff --cached --quiet; then
+          echo "No change to reports.json"
+        else
+          git commit -m "Update papers $(date -u +'%Y-%m-%d')"
+          git push origin main || echo "Push skipped (concurrent run)"
+        fi
+
+    # ── Upload Pages artifact LAST (after all git ops) ─────────────────────
+    # Upload everything in the working directory (generated HTML, tracked files).
+    - name: Upload Pages artifact
       uses: actions/upload-pages-artifact@v3
       with:
         path: '.'
 
-    - name: Push changes
-      run: |
-        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
-        # Remove tracked generated files (they are gitignored but may be in HEAD)
-        git rm -f index.html list.html 2>/dev/null || true
-        rm -f index.html list.html reports.json
-        git add -A
-        if git diff --cached --quiet; then
-          echo "No changes to commit"
-        else
-          git fetch --depth=1 origin main
-          git reset --hard origin/main
-          # Always clean generated dirs — they may have been restored from origin
-          rm -rf daily_json/ daily_html/
-          rm -f index.html list.html reports.json
-          git add -A
-          git commit -m "Update papers $(date -u +'%Y-%m-%d')" || true
-          git push origin main --force-with-lease || echo "Push skipped (concurrent run)"
-        fi
-
     - name: Setup Pages
       uses: actions/configure-pages@v4
-      if: success()
 
-    - name: Deploy
+    - name: Deploy to GitHub Pages
       id: deployment
       uses: actions/deploy-pages@v4
       if: success()

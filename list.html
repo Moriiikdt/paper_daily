@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Archive – Audio/Speech AI Daily</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#f9f7f4;--surface:#fff;--border:#e8e3dc;--text:#1a1817;
+      --muted:#8a8078;--accent:#1d4ed8;--accent-light:#eff6ff;
+      --navy:#0f172a;--radius:12px;--shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.06);
+      --font:'Space Grotesk','Noto Sans SC',system-ui,sans-serif;
+    }
+    html{font-size:16px;scroll-behavior:smooth}
+    body{background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.6;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+
+    .top-nav{
+      position:sticky;top:0;z-index:100;
+      background:rgba(249,247,244,.92);backdrop-filter:blur(16px);
+      border-bottom:1px solid var(--border);
+      padding:0 2rem;height:60px;
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .nav-brand{display:flex;align-items:center;gap:.6rem;font-size:.95rem;font-weight:700}
+    .nav-brand .icon{width:34px;height:34px;background:var(--navy);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.95rem}
+    .nav-brand .sub{font-size:.7rem;color:var(--muted);font-weight:400}
+    .nav-links{display:flex;gap:.75rem}
+    .nav-link{font-size:.82rem;font-weight:500;color:var(--muted);padding:.3rem .6rem;border-radius:8px;transition:all .15s}
+    .nav-link:hover{color:var(--text);text-decoration:none;background:var(--border)}
+    .nav-link.active{color:var(--accent);background:var(--accent-light)}
+
+    .page-header{
+      background:var(--navy);color:#fff;padding:3rem 2rem 2.5rem;
+      position:relative;overflow:hidden;
+    }
+    .page-header::before{
+      content:'';position:absolute;inset:0;
+      background:radial-gradient(ellipse at 10% 50%,rgba(29,78,216,.3) 0%,transparent 55%);
+      pointer-events:none;
+    }
+    .page-header-inner{max-width:1100px;margin:0 auto;position:relative}
+    .page-header h1{font-size:2rem;font-weight:800;letter-spacing:-.025em;margin-bottom:.5rem}
+    .page-header h1 em{color:#93c5fd;font-style:normal}
+    .page-header p{color:#94a3b8;font-size:.9rem}
+    .page-header p a{color:#93c5fd}
+
+    .container{max-width:1100px;margin:2rem auto;padding:0 1.5rem 4rem}
+
+    .section-hdr{display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem}
+    .section-hdr h2{font-size:1rem;font-weight:700}
+    .section-hdr .line{flex:1;height:1px;background:var(--border)}
+
+    /* Archive grid */
+    .archive-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
+    .archive-card{
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--radius);padding:1.25rem 1.5rem;
+      box-shadow:var(--shadow);transition:all .2s;
+      display:flex;align-items:center;gap:1rem;
+    }
+    .archive-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.1);border-color:#d1d5db}
+    .card-icon{
+      width:44px;height:44px;background:var(--navy);border-radius:10px;
+      display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;
+      flex-shrink:0;
+    }
+    .card-info{flex:1;min-width:0}
+    .card-date{font-size:.82rem;font-weight:700;color:var(--text)}
+    .card-label{font-size:.73rem;color:var(--muted);margin-top:.15rem}
+    .card-arrow{color:var(--muted);font-size:.9rem;flex-shrink:0}
+
+    .empty-state{text-align:center;padding:4rem 2rem;color:var(--muted)}
+    .empty-state h3{font-size:1.1rem;color:var(--text);margin-bottom:.5rem}
+
+    .site-footer{
+      border-top:1px solid var(--border);padding:1.5rem 2rem;
+      text-align:center;font-size:.75rem;color:var(--muted);max-width:1100px;margin:0 auto;
+    }
+
+    @media(max-width:600px){
+      .archive-grid{grid-template-columns:1fr}
+      .top-nav{padding:0 1rem}
+      .page-header{padding:2rem 1rem}
+      .container{padding:1.5rem 1rem 3rem}
+    }
+  </style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="nav-brand">
+    <div class="icon"><i class="fas fa-headphones-simple"></i></div>
+    <div>
+      Audio/Speech AI Daily
+      <div class="sub">arXiv · Auto-generated</div>
+    </div>
+  </div>
+  <div class="nav-links">
+    <a href="./index.html" class="nav-link"><i class="fas fa-scroll"></i> Latest</a>
+    <a href="./list.html" class="nav-link active"><i class="fas fa-archive"></i> Archive</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <h1>📚 Report <em>Archive</em></h1>
+    <p>Historical daily reports &nbsp;·&nbsp; <a href="./index.html">← Back to latest</a></p>
+  </div>
+</div>
+
+<div class="container">
+  <div class="section-hdr">
+    <h2><i class="fas fa-calendar" style="color:var(--accent)"></i> All Reports</h2>
+    <div class="line"></div>
+  </div>
+
+  <div id="reportList">
+    <div style="text-align:center;padding:3rem;color:var(--muted)">
+      <div style="font-size:1.5rem;margin-bottom:.5rem">📂</div>
+      <p>Loading archive…</p>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  Generated automatically &nbsp;·&nbsp; Audio/Speech AI Daily &nbsp;·&nbsp; arXiv + GPT-5.4
+</footer>
+
+<script>
+async function loadArchive() {
+  try {
+    const files = await fetch('reports.json').then(r => r.json());
+    const container = document.getElementById('reportList');
+    if (!files || files.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div style="font-size:2rem">📭</div><h3>No reports yet</h3><p>Reports will appear after the first daily run.</p></div>';
+      return;
+    }
+
+    const icons = ['fa-file-alt','fa-microphone','fa-wave-square','fa-brain','fa-broadcast-tower','fa-music','fa-podcast'];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    let html = '<div class="archive-grid">';
+    for (const file of files) {
+      const parts = file.replace('.html','').split('_');
+      const y = parts[0], m = parseInt(parts[1]), d = parts[2];
+      const label = `${y} ${months[m-1]} ${d} — ${file}`;
+      const icon = icons[Math.floor(Math.random() * icons.length)];
+      html += `
+        <a href="./daily_html/${file}" class="archive-card">
+          <div class="card-icon"><i class="fas ${icon}"></i></div>
+          <div class="card-info">
+            <div class="card-date">${y} ${months[m-1]} ${d}</div>
+            <div class="card-label">${file}</div>
+          </div>
+          <div class="card-arrow"><i class="fas fa-chevron-right"></i></div>
+        </a>`;
+    }
+    html += '</div>';
+    container.innerHTML = html;
+  } catch(e) {
+    document.getElementById('reportList').innerHTML =
+      '<div class="empty-state"><h3>⚠️ Failed to load archive</h3><p>Could not fetch reports.json. Make sure GitHub Pages is enabled.</p></div>';
+  }
+}
+loadArchive();
+</script>
+
+</body>
+</html>

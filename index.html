@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio/Speech AI Daily</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f9f7f4;
+      --surface: #ffffff;
+      --border: #e8e3dc;
+      --text: #1a1817;
+      --muted: #8a8078;
+      --accent: #1d4ed8;
+      --accent-hover: #1e40af;
+      --accent-light: #eff6ff;
+      --navy: #0f172a;
+      --gold: #d97706;
+      --gold-bg: #fffbeb;
+      --teal: #0d9488;
+      --teal-bg: #f0fdfa;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06);
+      --shadow-lg: 0 4px 16px rgba(0,0,0,.12), 0 20px 40px rgba(0,0,0,.1);
+      --font: 'Space Grotesk', 'Noto Sans SC', system-ui, sans-serif;
+      --font-serif: 'Noto Serif SC', Georgia, serif;
+    }
+
+    html { font-size: 16px; scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Top Navigation ───────────────────────────────────────────────────── */
+    .top-nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(249,247,244,.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-brand {
+      display: flex; align-items: center; gap: .6rem;
+      font-size: .95rem; font-weight: 700; color: var(--text);
+      letter-spacing: -.01em;
+    }
+    .nav-brand .icon {
+      width: 34px; height: 34px;
+      background: var(--navy);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: .95rem;
+      flex-shrink: 0;
+    }
+    .nav-brand .title { line-height: 1.2; }
+    .nav-brand .subtitle { font-size: .7rem; color: var(--muted); font-weight: 400; }
+
+    .nav-center {
+      display: flex; align-items: center; gap: .5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: .4rem .6rem;
+      width: 320px;
+    }
+    .nav-center input {
+      flex: 1; border: none; outline: none;
+      background: transparent; font-size: .82rem;
+      font-family: var(--font); color: var(--text);
+    }
+    .nav-center input::placeholder { color: var(--muted); }
+    .nav-center .search-btn {
+      background: var(--accent); color: #fff;
+      border: none; border-radius: 100px;
+      padding: .3rem .7rem; font-size: .7rem;
+      cursor: pointer; font-family: var(--font);
+      font-weight: 600;
+    }
+
+    .nav-right { display: flex; align-items: center; gap: 1rem; }
+    .nav-link {
+      font-size: .82rem; font-weight: 500; color: var(--muted);
+      padding: .3rem .5rem; border-radius: var(--radius-sm);
+      transition: all .15s;
+    }
+    .nav-link:hover { color: var(--text); text-decoration: none; background: var(--border); }
+    .nav-link.active { color: var(--accent); background: var(--accent-light); }
+
+    /* ── Hero ─────────────────────────────────────────────────────────────── */
+    .hero {
+      background: var(--navy);
+      color: #fff;
+      padding: 4rem 2rem 3.5rem;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse at 12% 55%, rgba(29,78,216,.35) 0%, transparent 55%),
+        radial-gradient(ellipse at 88% 10%, rgba(99,126,255,.2) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    .hero-inner {
+      max-width: 1100px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr auto; gap: 3rem; align-items: end;
+      position: relative;
+    }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: .4rem;
+      background: rgba(29,78,216,.35); border: 1px solid rgba(96,165,250,.3);
+      color: #93c5fd; font-size: .68rem; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase;
+      padding: .2rem .75rem; border-radius: 100px; margin-bottom: 1rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 800;
+      line-height: 1.1; letter-spacing: -.025em; margin-bottom: .75rem;
+    }
+    .hero h1 em { color: #93c5fd; font-style: normal; }
+    .hero-desc {
+      color: #94a3b8; font-size: .9rem; line-height: 1.65;
+      max-width: 520px; margin-bottom: 2rem;
+    }
+    .hero-stats { display: flex; gap: 2.5rem; }
+    .hero-stat .n { font-size: 1.8rem; font-weight: 800; color: #fff; line-height: 1; }
+    .hero-stat .l { font-size: .7rem; color: #64748b; margin-top: .2rem; }
+
+    .hero-right { text-align: right; }
+    .hero-source { font-size: .73rem; color: #64748b; display: flex; align-items: center; gap: .4rem; justify-content: flex-end; margin-bottom: .75rem; }
+    .topic-list { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: flex-end; max-width: 220px; }
+    .topic-chip {
+      font-size: .7rem; color: #94a3b8;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+      padding: .2rem .65rem; border-radius: 100px;
+    }
+
+    /* ── Filter tabs ──────────────────────────────────────────────────────── */
+    .filter-bar {
+      max-width: 1100px; margin: -1.5rem auto 0;
+      padding: 0 1.5rem;
+      position: relative; z-index: 10;
+    }
+    .filter-tabs {
+      display: flex; gap: .5rem; flex-wrap: wrap;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: .75rem 1rem;
+      box-shadow: var(--shadow);
+    }
+    .filter-tab {
+      font-size: .78rem; font-weight: 600;
+      color: var(--muted);
+      padding: .3rem .8rem; border-radius: 100px;
+      cursor: pointer; border: 1px solid transparent;
+      transition: all .15s;
+      background: none; font-family: var(--font);
+    }
+    .filter-tab:hover { color: var(--text); background: var(--bg); }
+    .filter-tab.active { color: var(--accent); background: var(--accent-light); border-color: #bfdbfe; }
+    .filter-tab .count { font-size: .65rem; font-weight: 700; background: var(--border); padding: .05rem .35rem; border-radius: 100px; margin-left: .3rem; }
+    .filter-tab.active .count { background: #bfdbfe; }
+
+    /* ── Main content ──────────────────────────────────────────────────────── */
+    .main-content {
+      max-width: 1100px; margin: 2rem auto;
+      padding: 0 1.5rem 4rem;
+    }
+
+    .content-frame {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      min-height: 600px;
+    }
+
+    iframe {
+      border: none; width: 100%; height: 900px; display: block;
+    }
+
+    .frame-loading {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 400px; gap: 1rem; color: var(--muted);
+    }
+    .frame-loading .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .frame-loading p { font-size: .85rem; }
+
+    /* ── Footer ───────────────────────────────────────────────────────────── */
+    .site-footer {
+      border-top: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      max-width: 1100px; margin: 0 auto;
+      font-size: .75rem; color: var(--muted);
+    }
+    .site-footer a { color: var(--accent); }
+    .footer-right { display: flex; gap: 1.5rem; }
+    .footer-right a:hover { text-decoration: none; }
+
+    /* ── Responsive ───────────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .top-nav { padding: 0 1rem; }
+      .nav-center { width: 200px; }
+      .nav-link:not(.active):not(:hover) { display: none; }
+      .hero { padding: 2.5rem 1rem 2rem; }
+      .hero-inner { grid-template-columns: 1fr; gap: 1.5rem; }
+      .hero-right { text-align: left; }
+      .hero-source, .topic-list { justify-content: flex-start; }
+      .filter-bar { margin-top: 0; }
+      .main-content { padding: 1.5rem 1rem 3rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Navigation ──────────────────────────────────────────────────────────── -->
+<nav class="top-nav">
+  <a href="./" class="nav-brand">
+    <div class="icon"><i class="fas fa-headphones-simple"></i></div>
+    <div class="title">
+      Audio/Speech AI Daily
+      <div class="subtitle">arXiv · Auto-generated</div>
+    </div>
+  </a>
+
+  <div class="nav-center">
+    <i class="fas fa-search" style="color:var(--muted);font-size:.8rem"></i>
+    <input type="text" id="searchInput" placeholder="Search papers by title, keyword…" onkeydown="if(event.key==='Enter')searchPapers()">
+    <button class="search-btn" onclick="searchPapers()">Search</button>
+  </div>
+
+  <div class="nav-right">
+    <a href="./index.html" class="nav-link active"><i class="fas fa-scroll"></i> Latest</a>
+    <a href="./list.html" class="nav-link"><i class="fas fa-archive"></i> Archive</a>
+  </div>
+</nav>
+
+<!-- ── Hero ───────────────────────────────────────────────────────────────── -->
+<div class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="hero-eyebrow"><i class="fas fa-bolt"></i> Daily Update</div>
+      <h1>Audio &amp; Speech AI<br><em>Research Tracker</em></h1>
+      <p class="hero-desc">
+        每日自动追踪 Audio LLM、语音感知与理解、语音合成、Omni 全模态模型领域的最新论文。<br>
+        Based on arXiv · Auto-generated with GPT-5.4 · Powered by zeabur.app
+      </p>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="n" id="todayCount">—</div><div class="l">papers today</div></div>
+        <div class="hero-stat"><div class="n" id="totalCount">—</div><div class="l">reports archived</div></div>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-source"><i class="fas fa-robot"></i> Powered by GPT-5.4</div>
+      <div class="topic-list">
+        <span class="topic-chip">Audio LLM</span>
+        <span class="topic-chip">Speech Synthesis</span>
+        <span class="topic-chip">Omni Models</span>
+        <span class="topic-chip">Audio Perception</span>
+        <span class="topic-chip">Voice Conversion</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Filter tabs ─────────────────────────────────────────────────────────── -->
+<div class="filter-bar">
+  <div class="filter-tabs">
+    <button class="filter-tab active" onclick="selectTab(this, 0)">All Reports <span class="count" id="tabCount">—</span></button>
+    <button class="filter-tab" onclick="selectTab(this, 1)">2026</button>
+    <button class="filter-tab" onclick="selectTab(this, 2)">2025</button>
+  </div>
+</div>
+
+<!-- ── Main ────────────────────────────────────────────────────────────────── -->
+<div class="main-content">
+  <div class="content-frame">
+    <div class="frame-loading" id="loading">
+      <div class="spinner"></div>
+      <p>Loading latest report…</p>
+    </div>
+    <iframe id="reportFrame" style="display:none" onload="frameLoaded()"></iframe>
+  </div>
+</div>
+
+<!-- ── Footer ──────────────────────────────────────────────────────────────── -->
+<footer class="site-footer">
+  <span>
+    Generated automatically &nbsp;·&nbsp; Audio/Speech AI Daily &nbsp;·&nbsp; arXiv + GPT-5.4
+  </span>
+  <div class="footer-right">
+    <a href="./index.html">Latest</a>
+    <a href="./list.html">Archive</a>
+    <a href="https://github.com/Moriiikdt/paper_daily" target="_blank">GitHub</a>
+  </div>
+</footer>
+
+<script>
+  // ── Load stats ─────────────────────────────────────────────────────────────
+  async function loadStats() {
+    try {
+      const [repRes, repList] = await Promise.all([
+        fetch('reports.json').then(r => r.json()).catch(() => []),
+        fetch('list.html').then(r => r.text()).catch(() => '')
+      ]);
+      const total = repRes.length;
+      document.getElementById('totalCount').textContent = total;
+      document.getElementById('tabCount').textContent = total;
+      const today = repRes[0] ? repRes[0].replace('.html','').replace('2026_','2026/') : null;
+      if (today) {
+        const parts = today.split('_');
+        // Count papers in today's JSON
+        const dateStr = parts[0].replace('/','-');
+        fetch('daily_json/' + dateStr + '.json')
+          .then(r => r.json())
+          .then(papers => {
+            document.getElementById('todayCount').textContent = papers.length;
+          })
+          .catch(() => {});
+      }
+    } catch(e) {}
+  }
+
+  // ── Load latest report ─────────────────────────────────────────────────────
+  async function loadLatestReport() {
+    try {
+      const files = await fetch('reports.json').then(r => r.json());
+      if (files && files.length) {
+        document.getElementById('reportFrame').src = './daily_html/' + files[0];
+      } else {
+        document.getElementById('loading').innerHTML =
+          '<div style="text-align:center;padding:3rem"><div style="font-size:2rem;margin-bottom:.5rem">📭</div><h3>No reports yet</h3><p style="color:var(--muted);margin-top:.5rem">Reports will appear after the first daily run at 01:00 UTC.</p></div>';
+      }
+    } catch(e) {
+      document.getElementById('loading').innerHTML =
+        '<div style="text-align:center;padding:3rem"><div style="font-size:2rem;margin-bottom:.5rem">⚠️</div><p style="color:var(--muted)">Failed to load. <a href="list.html">View archive</a>.</p></div>';
+    }
+  }
+
+  function frameLoaded() {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('reportFrame').style.display = 'block';
+  }
+
+  // ── Filter tabs ────────────────────────────────────────────────────────────
+  async function selectTab(btn, year) {
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    const files = await fetch('reports.json').then(r => r.json()).catch(() => []);
+    if (year === 0) {
+      document.getElementById('reportFrame').src = './daily_html/' + files[0];
+    } else {
+      const match = files.find(f => f.includes('20' + year + '_'));
+      if (match) {
+        document.getElementById('reportFrame').src = './daily_html/' + match;
+      }
+    }
+  }
+
+  // ── Search ────────────────────────────────────────────────────────────────
+  function searchPapers() {
+    const q = document.getElementById('searchInput').value.trim();
+    if (!q) return;
+    const src = document.getElementById('reportFrame').src;
+    const base = src.substring(0, src.lastIndexOf('/') + 1);
+    // Search is handled inside the iframe report
+    document.getElementById('reportFrame').src = './daily_html/' + (src.split('/daily_html/')[1] || '');
+    // Trigger search in iframe
+    try {
+      const iframe = document.getElementById('reportFrame');
+      iframe.contentWindow.postMessage({ type: 'search', query: q }, '*');
+    } catch(e) {}
+  }
+
+  loadStats();
+  loadLatestReport();
+</script>
+
+</body>
+</html>

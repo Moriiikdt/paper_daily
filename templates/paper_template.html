@@ -5,217 +5,430 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        :root {
-            --bg:#f9f8f6; --surface:#ffffff; --border:#e8e4df; --text:#1a1a1a;
-            --muted:#7a7a7a; --accent:#2563eb; --accent-light:#eff6ff;
-            --gold:#d97706; --gold-bg:#fef3c7; --navy:#0f172a;
-            --tag-bg:#f1f5f9;
-            --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.06);
-            --shadow-lg:0 4px 12px rgba(0,0,0,.10),0 12px 32px rgba(0,0,0,.10);
-            --radius:12px; --font-sans:'Inter','Noto Sans SC',system-ui,sans-serif;
-            --font-serif:'Noto Serif SC',Georgia,serif;
-        }
+        /* ── Reset & Base ─────────────────────────────────────────────────── */
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         html{font-size:16px;scroll-behavior:smooth}
-        body{background:var(--bg);color:var(--text);font-family:var(--font-sans);line-height:1.65;-webkit-font-smoothing:antialiased}
-        a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+        body{background:#f8f7f4;color:#1a1817;font-family:'Space Grotesk','Noto Sans SC',system-ui,sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased}
+        a{color:#1d4ed8;text-decoration:none}a:hover{text-decoration:underline}
+        img{max-width:100%}
 
-        /* Content container */
-        .container{max-width:900px;margin:0 auto;padding:1.5rem 1.5rem 3rem}
+        /* ── Report Header ────────────────────────────────────────────────── */
+        .report-header{
+            background:#0f172a;
+            color:#fff;
+            padding:2.5rem 2rem 2rem;
+            position:relative;overflow:hidden;
+        }
+        .report-header::before{
+            content:'';position:absolute;inset:0;
+            background:radial-gradient(ellipse at 15% 50%,rgba(29,78,216,.35) 0%,transparent 55%),
+                        radial-gradient(ellipse at 85% 10%,rgba(99,126,255,.18) 0%,transparent 50%);
+            pointer-events:none;
+        }
+        .report-header-inner{
+            max-width:1000px;margin:0 auto;
+            position:relative;
+        }
+        .report-eyebrow{
+            display:inline-flex;align-items:center;gap:.4rem;
+            background:rgba(29,78,216,.35);border:1px solid rgba(96,165,250,.3);
+            color:#93c5fd;font-size:.7rem;font-weight:700;
+            letter-spacing:.08em;text-transform:uppercase;
+            padding:.2rem .75rem;border-radius:100px;margin-bottom:.75rem;
+        }
+        .report-header h1{
+            font-size:clamp(1.4rem,3.5vw,2rem);font-weight:800;
+            line-height:1.15;letter-spacing:-.025em;margin-bottom:.5rem;
+        }
+        .report-header h1 em{color:#93c5fd;font-style:normal}
+        .report-meta{
+            display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;
+            font-size:.8rem;color:#64748b;margin-top:.75rem;
+        }
+        .report-meta span{display:flex;align-items:center;gap:.3rem}
+        .report-stats{
+            display:flex;gap:2rem;margin-top:1.25rem;
+        }
+        .report-stats .stat{}
+        .report-stats .n{font-size:1.5rem;font-weight:800;color:#fff;line-height:1}
+        .report-stats .l{font-size:.7rem;color:#64748b;margin-top:.15rem}
 
-        /* Section header */
-        .section-hdr{display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem}
-        .section-hdr h2{font-size:1rem;font-weight:700;color:var(--text);letter-spacing:-.01em}
-        .section-hdr .line{flex:1;height:1px;background:var(--border)}
+        /* ── Content Container ─────────────────────────────────────────────── */
+        .container{max-width:1000px;margin:0 auto;padding:2rem 1.5rem 4rem}
 
-        /* Top cited */
-        .top-cited-wrap{background:var(--navy);border-radius:var(--radius);padding:1.5rem;margin-bottom:2rem;box-shadow:var(--shadow)}
-        .top-cited-header{display:flex;align-items:center;gap:.6rem;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid rgba(255,255,255,.1)}
-        .top-cited-header h2{font-size:.82rem;font-weight:700;color:#fff;letter-spacing:.04em;text-transform:uppercase}
-        .year-badge{background:rgba(37,99,235,.4);border:1px solid rgba(96,165,250,.3);color:#93c5fd;font-size:.7rem;font-weight:600;padding:.18rem .55rem;border-radius:100px}
-        .top-cited-table{width:100%;border-collapse:collapse;font-size:.8rem}
-        .top-cited-table th{text-align:left;padding:.5rem .75rem;color:#64748b;font-weight:600;font-size:.7rem;letter-spacing:.04em;text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,.08)}
-        .top-cited-table td{padding:.6rem .75rem;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:top;color:#cbd5e1}
-        .top-cited-table tr:last-child td{border-bottom:none}
-        .top-cited-table tr:hover td{background:rgba(255,255,255,.03)}
-        .rank-dot{display:inline-flex;align-items:center;justify-content:center;width:1.5rem;height:1.5rem;border-radius:50%;font-weight:800;font-size:.7rem;flex-shrink:0}
-        .rank-1{background:#fbbf24;color:#1e293b}.rank-2{background:#94a3b8;color:#1e293b}.rank-3{background:#b87333;color:#fff}.rank-other{background:#334155;color:#94a3b8}
-        .top-title{color:#e2e8f0;font-weight:500;line-height:1.35;font-size:.85rem}
-        .top-title a{color:#93c5fd}.top-title a:hover{color:#fff;text-decoration:none}
-        .top-summary{color:#64748b;font-size:.72rem;margin-top:.2rem;line-height:1.4}
-        .top-authors{color:#64748b;font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px}
-        .top-citations{display:inline-flex;align-items:center;gap:.2rem;background:rgba(251,191,36,.15);color:#fbbf24;font-weight:700;font-size:.72rem;padding:.18rem .5rem;border-radius:100px;white-space:nowrap}
-        .top-venue{color:#64748b;font-size:.7rem}
-        .top-plain{color:#94a3b8;white-space:pre-wrap;line-height:1.8;font-size:.82rem}
-        .top-year{color:#64748b;font-size:.72rem}
+        /* ── Section header ────────────────────────────────────────────────── */
+        .section-hdr{display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem;margin-top:2.5rem}
+        .section-hdr h2{font-size:1.05rem;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:.5rem;white-space:nowrap}
+        .section-hdr .line{flex:1;height:1px;background:#e5e2dc}
 
-        /* Paper cards */
-        .papers-list{display:flex;flex-direction:column;gap:1.25rem}
-        .paper-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem 1.75rem;box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s,border-color .2s}
-        .paper-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);border-color:#d1d5db}
+        /* ── Top-10 Most Cited ────────────────────────────────────────────── */
+        .top10-card{
+            background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);
+            border-radius:16px;padding:2rem;
+            box-shadow:0 8px 32px rgba(0,0,0,.25);margin-bottom:2rem;
+        }
+        .top10-header{
+            display:flex;align-items:center;justify-content:space-between;
+            margin-bottom:1.5rem;padding-bottom:1rem;
+            border-bottom:1px solid rgba(255,255,255,.08);
+        }
+        .top10-title{display:flex;align-items:center;gap:.6rem}
+        .top10-title h2{font-size:.8rem;font-weight:700;color:#fff;letter-spacing:.05em;text-transform:uppercase}
+        .year-chip{
+            background:rgba(29,78,216,.5);border:1px solid rgba(99,126,255,.4);
+            color:#93c5fd;font-size:.7rem;font-weight:700;
+            padding:.18rem .65rem;border-radius:100px;
+        }
+        .top10-table{width:100%;border-collapse:collapse;font-size:.82rem}
+        .top10-table th{
+            text-align:left;padding:.5rem .75rem;
+            color:#475569;font-weight:600;font-size:.7rem;
+            letter-spacing:.04em;text-transform:uppercase;
+            border-bottom:1px solid rgba(255,255,255,.06);
+        }
+        .top10-table td{
+            padding:.75rem .75rem;
+            border-bottom:1px solid rgba(255,255,255,.04);
+            vertical-align:top;color:#cbd5e1;
+        }
+        .top10-table tr:last-child td{border-bottom:none}
+        .top10-table tr:hover td{background:rgba(255,255,255,.03)}
+        .rank-circle{
+            display:inline-flex;align-items:center;justify-content:center;
+            width:26px;height:26px;border-radius:50%;
+            font-weight:800;font-size:.72rem;flex-shrink:0;
+        }
+        .rank-1{background:#fbbf24;color:#1e293b}
+        .rank-2{background:#94a3b8;color:#1e293b}
+        .rank-3{background:#cd7f32;color:#fff}
+        .rank-4{background:#334155;color:#94a3b8}
+        .rank-5{background:#334155;color:#94a3b8}
+        .rank-other{background:#334155;color:#94a3b8}
+        .top-title-text{color:#e2e8f0;font-weight:500;line-height:1.4;font-size:.88rem}
+        .top-title-text a{color:#93c5fd}
+        .top-title-text a:hover{color:#fff;text-decoration:none}
+        .top-authors{color:#475569;font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+        .cite-pill{
+            display:inline-flex;align-items:center;gap:.2rem;
+            background:rgba(251,191,36,.15);color:#fbbf24;
+            font-weight:700;font-size:.72rem;
+            padding:.18rem .55rem;border-radius:100px;
+        }
+        .top-summary{color:#475569;font-size:.73rem;margin-top:.25rem;line-height:1.5}
+        .top-plain{color:#94a3b8;white-space:pre-wrap;font-size:.85rem;line-height:1.8}
 
-        .card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.75rem}
-        .card-num{font-size:.72rem;color:var(--muted);padding:.2rem .5rem;background:var(--tag-bg);border-radius:6px;white-space:nowrap;flex-shrink:0;margin-top:.08rem;font-family:monospace}
-        .card-title{font-size:1.05rem;font-weight:700;color:var(--text);line-height:1.35;letter-spacing:-.01em;flex:1}
-        .card-title a{color:inherit;text-decoration:none}.card-title a:hover{color:var(--accent);text-decoration:none}
+        /* ── Papers List ──────────────────────────────────────────────────── */
+        .papers-list{display:flex;flex-direction:column;gap:1.5rem}
 
-        /* Scores */
-        .scores-row{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem 1rem;margin-bottom:.8rem;padding-bottom:.8rem;border-bottom:1px solid var(--border)}
-        .score-item{display:flex;align-items:center;gap:.3rem;font-size:.73rem;color:var(--muted)}
-        .score-item span{font-weight:600;color:var(--text)}
-        .stars{display:inline-flex;gap:1px}
-        .star-on{color:var(--gold)}.star-off{color:#e5e7eb}
-        .overall-score{display:inline-flex;align-items:center;gap:.3rem;font-size:.7rem;font-weight:700;color:#fff;background:var(--accent);padding:.18rem .55rem;border-radius:100px}
+        .paper-card{
+            background:#fff;
+            border:1px solid #e8e3dc;
+            border-radius:16px;
+            padding:2rem;
+            box-shadow:0 1px 3px rgba(0,0,0,.05),0 4px 16px rgba(0,0,0,.05);
+            transition:transform .2s,box-shadow .2s,border-color .2s;
+            position:relative;
+        }
+        /* Left accent stripe */
+        .paper-card::before{
+            content:'';
+            position:absolute;top:0;left:0;bottom:0;
+            width:4px;
+            background:linear-gradient(to bottom,#1d4ed8,rgba(29,78,216,.2));
+            border-radius:16px 0 0 16px;
+        }
+        .paper-card:hover{
+            transform:translateY(-2px);
+            box-shadow:0 4px 12px rgba(0,0,0,.1),0 16px 32px rgba(0,0,0,.08);
+            border-color:#d1d5db;
+        }
 
-        /* Chinese abstract — prominent */
-        .abstract-zh{font-family:var(--font-serif);font-size:.9rem;line-height:1.9;color:#374151;margin-bottom:.75rem;padding:.85rem 1rem;background:linear-gradient(135deg,#f0f9ff,#eff6ff);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;position:relative}
-        .abstract-zh::after{content:'中文';position:absolute;top:.5rem;right:.6rem;font-size:.62rem;font-weight:700;color:var(--accent);letter-spacing:.04em;opacity:.55;font-family:'Inter',sans-serif}
+        /* Card top row */
+        .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1rem}
+        .card-num{
+            font-size:.72rem;color:#8a8078;background:#f5f3f0;
+            padding:.2rem .6rem;border-radius:6px;
+            font-family:monospace;white-space:nowrap;
+            flex-shrink:0;margin-top:.1rem;
+        }
+        .card-title{
+            font-size:1.15rem;font-weight:700;color:#1a1817;
+            line-height:1.4;letter-spacing:-.01em;flex:1;
+        }
+        .card-title a{color:inherit;text-decoration:none}
+        .card-title a:hover{color:#1d4ed8}
 
-        /* English summary */
-        .tldr{font-size:.82rem;color:#4b5563;margin-bottom:.75rem;padding:.6rem .9rem;background:var(--gold-bg);border-radius:8px;border:1px solid #fde68a;line-height:1.6}
-        .tldr-label{font-weight:700;color:var(--gold);font-size:.7rem;letter-spacing:.04em;text-transform:uppercase;margin-right:.4rem}
+        /* Score bar */
+        .score-bar{
+            display:flex;flex-wrap:wrap;align-items:center;
+            gap:.5rem 1.25rem;margin-bottom:1rem;
+            padding-bottom:1rem;border-bottom:1px solid #e8e3dc;
+        }
+        .overall-chip{
+            display:inline-flex;align-items:center;gap:.3rem;
+            font-size:.72rem;font-weight:700;color:#fff;
+            background:#1d4ed8;padding:.22rem .7rem;border-radius:100px;
+        }
+        .score-item{display:flex;align-items:center;gap:.4rem;font-size:.75rem;color:#8a8078}
+        .score-label{font-weight:600;color:#1a1817}
+        .mini-bar{width:52px;height:4px;background:#f0eeeb;border-radius:2px;overflow:hidden}
+        .mini-bar-fill{height:100%;border-radius:2px;background:#1d4ed8;transition:width .3s}
+        .score-val{font-size:.72rem;font-weight:700;color:#1a1817;min-width:1.5rem}
+
+        /* Chinese abstract — THE MOST PROMINENT ELEMENT */
+        .zh-abstract{
+            font-family:'Noto Serif SC',Georgia,serif;
+            font-size:1rem;line-height:2;
+            color:#1e293b;
+            background:linear-gradient(135deg,#f0f9ff 0%,#eff6ff 50%,#f0fdfa 100%);
+            border-left:5px solid #1d4ed8;
+            border-radius:0 12px 12px 0;
+            padding:1.1rem 1.25rem;
+            margin-bottom:.75rem;
+            position:relative;
+        }
+        .zh-abstract::before{
+            content:'ZH · 中文摘要';
+            position:absolute;top:.5rem;right:.75rem;
+            font-size:.65rem;font-weight:700;
+            color:#1d4ed8;letter-spacing:.05em;
+            opacity:.5;font-family:'Space Grotesk',sans-serif;
+        }
+
+        /* English summary — fallback, smaller */
+        .en-summary{
+            font-size:.83rem;color:#4b5563;
+            background:#fffbeb;
+            border:1px solid #fde68a;
+            border-radius:10px;
+            padding:.7rem 1rem;
+            margin-bottom:.75rem;line-height:1.7;
+        }
+        .en-label{font-weight:700;color:#d97706;font-size:.7rem;letter-spacing:.04em;text-transform:uppercase;margin-right:.4rem}
 
         /* Card footer */
-        .card-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+        .card-footer{
+            display:flex;align-items:center;
+            justify-content:space-between;flex-wrap:wrap;gap:.5rem;
+            margin-top:.75rem;
+        }
         .card-links{display:flex;gap:.5rem;flex-wrap:wrap}
-        .card-link{display:inline-flex;align-items:center;gap:.3rem;font-size:.75rem;font-weight:600;color:var(--accent);background:#eff6ff;border:1px solid #bfdbfe;padding:.28rem .7rem;border-radius:8px;transition:all .15s;text-decoration:none}
-        .card-link:hover{background:#dbeafe;border-color:#93c5fd;text-decoration:none}
-        .card-authors{font-size:.72rem;color:var(--muted);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:300px}
+        .card-link{
+            display:inline-flex;align-items:center;gap:.3rem;
+            font-size:.78rem;font-weight:600;color:#1d4ed8;
+            background:#eff6ff;border:1px solid #bfdbfe;
+            padding:.28rem .75rem;border-radius:8px;
+            transition:all .15s;
+        }
+        .card-link:hover{background:#dbeafe;border-color:#1d4ed8;text-decoration:none}
+        .card-authors{
+            font-size:.75rem;color:#8a8078;font-style:italic;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:380px;
+        }
 
-        /* Date tag */
-        .date-tag{font-size:.75rem;color:var(--muted);text-align:center;padding:1rem 0 .5rem;font-weight:600;letter-spacing:.02em}
+        /* Empty state */
+        .empty-state{text-align:center;padding:4rem 2rem}
+        .empty-state h3{font-size:1.15rem;font-weight:700;margin-bottom:.5rem;color:#1a1817}
+        .empty-state p{color:#8a8078}
 
-        /* Empty */
-        .empty-state{text-align:center;padding:4rem 2rem;color:var(--muted)}
-        .empty-state h3{font-size:1.1rem;margin-bottom:.5rem;color:var(--text)}
+        /* ── Report Footer ─────────────────────────────────────────────────── */
+        .report-footer{
+            border-top:1px solid #e8e3dc;
+            padding:1.5rem 1.5rem;
+            text-align:center;font-size:.75rem;color:#8a8078;
+            max-width:1000px;margin:0 auto;
+        }
 
-        /* Generation footer */
-        .gen-footer{border-top:1px solid var(--border);padding:1rem 1.5rem;text-align:center;font-size:.72rem;color:var(--muted)}
-
-        @media(max-width:640px){
-            .container{padding:1rem 1rem 2rem}
-            .paper-card{padding:1.25rem}
-            .top-authors,.top-year,.top-venue{display:none}
-            .card-authors{max-width:180px}
+        /* ── Responsive ────────────────────────────────────────────────────── */
+        @media(max-width:680px){
+            .report-header{padding:2rem 1rem 1.5rem}
+            .container{padding:1.5rem 1rem 3rem}
+            .paper-card{padding:1.5rem}
+            .top-authors,.top-venue,.top-year{display:none}
+            .card-authors{max-width:200px}
+            .card-top{flex-direction:column}
+            .card-title{font-size:1rem}
         }
     </style>
 </head>
 <body>
 
-    <!-- Date / context tag -->
-    <div class="date-tag">
-        <i class="fas fa-calendar-day" style="margin-right:.4rem;color:var(--gold)"></i>
-        {{ report_date.strftime('%B %d, %Y') }}
+<!-- ── Report Header (not duplicated with outer shell) ──────────────────── -->
+<div class="report-header">
+    <div class="report-header-inner">
+        <div class="report-eyebrow"><i class="fas fa-bolt"></i> Daily Report</div>
+        <h1>Audio &amp; Speech AI <em>Research</em></h1>
+        <p style="color:#94a3b8;font-size:.9rem;max-width:600px;line-height:1.6">
+            每日自动追踪 Audio LLM、语音感知与理解、语音合成、Omni 全模态模型领域最新论文<br>
+            <span style="color:#64748b;font-size:.8rem">Based on arXiv · Auto-generated with GPT-5.4 · Powered by zeabur.app</span>
+        </p>
+        <div class="report-stats">
+            <div class="stat"><div class="n">{{ papers|length }}</div><div class="l">papers today</div></div>
+            <div class="stat"><div class="n">10</div><div class="l">{{ prev_year }}–{{ curr_year }} top cited</div></div>
+        </div>
+        <div class="report-meta">
+            <span><i class="far fa-calendar"></i> {{ report_date.strftime('%Y-%m-%d') }}</span>
+            <span><i class="fas fa-robot"></i> GPT-5.4 via zeabur.app</span>
+        </div>
+    </div>
+</div>
+
+<!-- ── Main Content ───────────────────────────────────────────────────────── -->
+<div class="container">
+
+{# ── Top 10 Most Cited ──────────────────────────────────────────────────── #}
+{% if top_cited_papers %}
+<div class="section-hdr">
+    <h2><i class="fas fa-fire" style="color:#d97706"></i> Top 10 Most Cited ({{ prev_year }}–{{ curr_year }})</h2>
+    <div class="line"></div>
+</div>
+
+<div class="top10-card">
+    <div class="top10-header">
+        <div class="top10-title">
+            <i class="fas fa-trophy" style="color:#fbbf24;font-size:.9rem"></i>
+            <h2>Most Cited Papers</h2>
+        </div>
+        <span class="year-chip">{{ prev_year }}–{{ curr_year }}</span>
     </div>
 
-    <div class="container">
+    {% if top_cited_papers[0] is mapping %}
+    <table class="top10-table">
+        <thead>
+            <tr>
+                <th style="width:44px">#</th>
+                <th>Title &amp; Summary</th>
+                <th style="width:130px">Authors</th>
+                <th style="width:50px">Year</th>
+                <th style="width:90px">Citations</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for paper in top_cited_papers %}
+        <tr>
+            <td>
+                <span class="rank-circle {% if paper.rank==1 %}rank-1{% elif paper.rank==2 %}rank-2{% elif paper.rank==3 %}rank-3{% elif paper.rank<=5 %}rank-4{% else %}rank-other{% endif %}">
+                    {{ paper.rank }}
+                </span>
+            </td>
+            <td>
+                <div class="top-title-text">
+                    <a href="{{ paper.url if paper.url else '#' }}" target="_blank">{{ paper.title }}</a>
+                </div>
+                {% if paper.summary %}
+                <div class="top-summary">{{ paper.summary[:150] }}{% if paper.summary|length > 150 %}…{% endif %}</div>
+                {% endif %}
+            </td>
+            <td class="top-authors">{{ paper.authors if paper.authors else '' }}</td>
+            <td class="top-venue">{{ paper.year if paper.year else '' }}</td>
+            <td>
+                {% if paper.citations %}
+                <span class="cite-pill">
+                    <i class="fas fa-quote-left" style="font-size:.6rem"></i>
+                    {{ paper.citations }}
+                </span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <pre class="top-plain">{{ top_cited_papers[0] }}</pre>
+    {% endif %}
+</div>
+{% endif %}
 
-        {# Top-10 Most Cited #}
-        {% if top_cited_papers %}
-        <div class="section-hdr">
-            <h2><i class="fas fa-fire" style="color:#d97706;margin-right:.4rem"></i>Top 10 Most Cited ({{ prev_year }}–{{ curr_year }})</h2>
-            <div class="line"></div>
+{# ── Today's Papers ────────────────────────────────────────────────────── #}
+<div class="section-hdr">
+    <h2><i class="fas fa-scroll" style="color:#1d4ed8"></i> Today's Papers <span style="font-size:.85rem;font-weight:400;color:#8a8078;margin-left:.5rem">({{ papers|length }})</span></h2>
+    <div class="line"></div>
+</div>
+
+<div class="papers-list">
+    {% for paper in papers %}
+    <div class="paper-card">
+
+        <!-- Card header: number + title -->
+        <div class="card-top">
+            <span class="card-num">#{{ loop.index }}</span>
+            <h3 class="card-title">
+                <a href="{{ paper.url }}" target="_blank">{{ paper.title }}</a>
+            </h3>
         </div>
 
-        <div class="top-cited-wrap">
-            {% if top_cited_papers[0] is mapping %}
-            <div class="top-cited-header">
-                <h2><i class="fas fa-trophy" style="color:#fbbf24;margin-right:.4rem"></i>Most Cited Papers</h2>
-                <span class="year-badge">{{ prev_year }}–{{ curr_year }}</span>
+        <!-- Score bar -->
+        {% if paper.overall_priority_score is defined %}
+        <div class="score-bar">
+            <span class="overall-chip">
+                <i class="fas fa-star" style="font-size:.6rem"></i>
+                Overall {{ paper.overall_priority_score }}/10
+            </span>
+            {% for label, key in [('Relevance','relevance_score'),('Novelty','novelty_score'),('Clarity','clarity_score'),('Impact','impact_score')] %}
+            {% if paper[key] is defined %}
+            <div class="score-item">
+                <span class="score-label">{{ label }}</span>
+                <div class="mini-bar">
+                    <div class="mini-bar-fill" style="width:{{ (paper[key]/10*100)|round }}%"></div>
+                </div>
+                <span class="score-val">{{ paper[key] }}</span>
             </div>
-            <div style="overflow-x:auto">
-            <table class="top-cited-table">
-                <thead>
-                    <tr><th style="width:44px">#</th><th>Title</th><th style="width:110px">Authors</th><th style="width:50px">Year</th><th style="width:80px">Citations</th></tr>
-                </thead>
-                <tbody>
-                {% for paper in top_cited_papers %}
-                    <tr>
-                        <td>
-                            {% if paper.rank == 1 %}<span class="rank-dot rank-1">{{ paper.rank }}</span>
-                            {% elif paper.rank == 2 %}<span class="rank-dot rank-2">{{ paper.rank }}</span>
-                            {% elif paper.rank == 3 %}<span class="rank-dot rank-3">{{ paper.rank }}</span>
-                            {% else %}<span class="rank-dot rank-other">{{ paper.rank }}</span>{% endif %}
-                        </td>
-                        <td>
-                            <div class="top-title"><a href="{{ paper.url if paper.url else '#' }}" target="_blank">{{ paper.title }}</a></div>
-                            {% if paper.summary %}<div class="top-summary">{{ paper.summary[:100] }}{% if paper.summary|length > 100 %}…{% endif %}</div>{% endif %}
-                        </td>
-                        <td class="top-authors">{{ paper.authors if paper.authors else '' }}</td>
-                        <td class="top-year">{{ paper.year if paper.year else '' }}</td>
-                        <td><span class="top-citations"><i class="fas fa-quote-left" style="font-size:.6rem"></i> {{ paper.citations if paper.citations else '' }}</span></td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-            </div>
-            {% else %}
-            <pre class="top-plain">{{ top_cited_papers[0] }}</pre>
             {% endif %}
+            {% endfor %}
         </div>
         {% endif %}
 
-        {# Today's Papers #}
-        <div class="section-hdr">
-            <h2><i class="fas fa-scroll" style="color:var(--accent);margin-right:.4rem"></i>Papers Today ({{ papers|length }})</h2>
-            <div class="line"></div>
+        <!-- Chinese abstract — THE STAR (most prominent) -->
+        {% if paper.tldr %}
+        <div class="zh-abstract">{{ paper.tldr }}</div>
+        {% endif %}
+
+        <!-- English summary (fallback, secondary) -->
+        {% if paper.summary and (not paper.tldr or paper.summary != paper.tldr) %}
+        <div class="en-summary">
+            <span class="en-label">EN</span>
+            {{ paper.summary[:300] }}{% if paper.summary|length > 300 %}…{% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Footer: links + authors -->
+        <div class="card-footer">
+            <div class="card-links">
+                <a href="{{ paper.url }}" target="_blank" class="card-link">
+                    <i class="fas fa-file-pdf"></i> arXiv
+                </a>
+                {% if paper.pdf_url %}
+                <a href="{{ paper.pdf_url }}" target="_blank" class="card-link">
+                    <i class="fas fa-download"></i> PDF
+                </a>
+                {% endif %}
+            </div>
+            {% if paper.authors %}
+            <div class="card-authors">{{ paper.authors|join(', ') }}</div>
+            {% endif %}
         </div>
 
-        <div class="papers-list">
-            {% for paper in papers %}
-            <div class="paper-card">
-
-                <div class="card-header">
-                    <span class="card-num">#{{ loop.index }}</span>
-                    <h3 class="card-title"><a href="{{ paper.url }}" target="_blank">{{ paper.title }}</a></h3>
-                </div>
-
-                {% if paper.overall_priority_score is defined %}
-                <div class="scores-row">
-                    <div class="overall-score"><i class="fas fa-star" style="font-size:.65rem"></i> Overall {{ paper.overall_priority_score }}/10</div>
-                    {% for label, key in [('Relevance','relevance_score'),('Novelty','novelty_score'),('Clarity','clarity_score'),('Impact','impact_score')] %}
-                    {% if paper[key] is defined %}
-                    <div class="score-item">{{ label }}: <div class="stars">{% set s=(paper[key]/2)|round|int %}{% for i in range(5) %}{% if i<s %}<i class="fas fa-star star-on"></i>{% else %}<i class="far fa-star star-off"></i>{% endif %}{% endfor %}</div></div>
-                    {% endif %}
-                    {% endfor %}
-                </div>
-                {% endif %}
-
-                {# Chinese abstract — most prominent #}
-                {% if paper.tldr %}
-                <div class="abstract-zh">{{ paper.tldr }}</div>
-                {% endif %}
-
-                {# English summary — only if different from Chinese #}
-                {% if paper.summary and paper.summary != paper.tldr %}
-                <div class="tldr"><span class="tldr-label">Summary</span> {{ paper.summary[:280] }}{% if paper.summary|length > 280 %}…{% endif %}</div>
-                {% endif %}
-
-                <div class="card-footer">
-                    <div class="card-links">
-                        <a href="{{ paper.url }}" target="_blank" class="card-link"><i class="fas fa-file-pdf"></i> arXiv</a>
-                        {% if paper.pdf_url %}<a href="{{ paper.pdf_url }}" target="_blank" class="card-link"><i class="fas fa-download"></i> PDF</a>{% endif %}
-                    </div>
-                    {% if paper.authors %}<div class="card-authors">{{ paper.authors|join(', ') }}</div>{% endif %}
-                </div>
-
-            </div>
-            {% else %}
-            <div class="empty-state">
-                <div style="font-size:2rem;margin-bottom:.5rem">🎉</div>
-                <h3>No papers today</h3>
-                <p>No relevant papers found. Check back tomorrow!</p>
-            </div>
-            {% endfor %}
-        </div>
     </div>
-
-    <div class="gen-footer">
-        Generated {{ generation_time.strftime('%Y-%m-%d %H:%M UTC') }} &nbsp;·&nbsp; Powered by arXiv + GPT-5.4
+    {% else %}
+    <div class="paper-card empty-state">
+        <div style="font-size:2.5rem;margin-bottom:1rem">🎉</div>
+        <h3>No papers today</h3>
+        <p>No relevant papers found. Check back tomorrow!</p>
     </div>
+    {% endfor %}
+</div>
+
+</div>
+
+<!-- ── Report Footer ────────────────────────────────────────────────────── -->
+<div class="report-footer">
+    Generated {{ generation_time.strftime('%Y-%m-%d %H:%M UTC') }}
+    &nbsp;·&nbsp; Audio/Speech AI Daily
+    &nbsp;·&nbsp; arXiv + GPT-5.4
+</div>
 
 </body>
 </html>

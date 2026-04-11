@@ -102,7 +102,7 @@ def fetch_papers(specified_date: date) -> list:
         try:
             search = arxiv.Search(
                 query=query,
-                max_results=5,
+                max_results=30,
                 sort_by=arxiv.SortCriterion.SubmittedDate,
             )
             cnt = 0

@@ -395,7 +395,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     log.info(f"Model: {OPENAI_MODEL}")
-    log.info(f"API: {OPENAI_API_URL}")
+    log.info(f"API: {OPENAI_API_BASE}")
     log.info(f"PROJECT_ROOT: {PROJECT_ROOT}")
     log.info(f"API key present: {bool(OPENAI_API_KEY)}")
 

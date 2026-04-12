@@ -19,7 +19,7 @@ jobs:
     env:
       OPENAI_API_KEY:  ${{ secrets.OPENAI_API_KEY }}
       OPENAI_API_BASE:  ${{ secrets.OPENAI_API_BASE }}
-      OPENAI_MODEL:     gpt-5.4
+      OPENAI_MODEL:     qwen-3-235b-a22b-instruct-2507
     permissions:
       contents: write
       pages: write

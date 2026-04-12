@@ -15,9 +15,9 @@ log = logging.getLogger("pipeline")
 
 # ── API Config ──────────────────────────────────────────────────────────────
 OPENAI_API_KEY      = os.getenv("OPENAI_API_KEY", "")
-OPENAI_API_BASE_URL = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1").rstrip("/")
-OPENAI_API_URL      = f"{OPENAI_API_BASE_URL}/chat/completions"
-OPENAI_MODEL        = os.getenv("OPENAI_MODEL", "gpt-5.4")
+OPENAI_API_BASE     = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1").rstrip("/")
+OPENAI_API_BASE_URL = f"{OPENAI_API_BASE}/chat/completions"
+OPENAI_MODEL        = os.getenv("OPENAI_MODEL", "qwen-3-235b-a22b-instruct-2507")
 
 PROJECT_ROOT   = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 JSON_DIR       = os.path.join(PROJECT_ROOT, "daily_json")

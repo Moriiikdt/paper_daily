@@ -50,6 +50,9 @@ def llm_call(prompt: str, max_tokens: int = 3000, temperature: float = 0.1) -> O
             time.sleep(wait)
         try:
             resp = requests.post(OPENAI_API_URL, headers=headers, json=payload, timeout=300)
+            # Diagnostic: show raw response on non-200
+            if resp.status_code != 200:
+                log.warning(f"  Raw response ({resp.status_code}): {resp.text[:200]}")
             if resp.status_code == 429:
                 log.warning("429 rate-limit")
                 continue
@@ -57,9 +60,12 @@ def llm_call(prompt: str, max_tokens: int = 3000, temperature: float = 0.1) -> O
                 log.warning(f"Server error {resp.status_code}")
                 continue
             if resp.status_code != 200:
-                log.warning(f"HTTP {resp.status_code}: {resp.text[:200]}")
                 continue
-            content = resp.json().get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+            try:
+                content = resp.json().get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+            except Exception as json_err:
+                log.warning(f"  JSON parse error: {json_err} | response: {resp.text[:200]}")
+                continue
             if not content:
                 log.warning("Empty response"); continue
             return content
@@ -375,8 +381,7 @@ def process(target_date: date, force: bool = False):
         log.info(f"Saved {jpath} ({len(papers)} papers)")
 
     generate_html(target_date.isoformat(), papers)
-    if is_today:
-        update_reports()
+    update_reports()
     return papers
 
 

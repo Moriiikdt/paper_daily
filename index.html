@@ -72,7 +72,7 @@
       border: 1px solid var(--border);
       border-radius: 100px;
       padding: .4rem .6rem;
-      width: 320px;
+      width: 480px;
     }
     .nav-center input {
       flex: 1; border: none; outline: none;
@@ -246,13 +246,13 @@
 
   <div class="nav-center">
     <i class="fas fa-search" style="color:var(--muted);font-size:.8rem"></i>
-    <input type="text" id="searchInput" placeholder="Search papers by title, keyword…" onkeydown="if(event.key==='Enter')searchPapers()">
-    <button class="search-btn" onclick="searchPapers()">Search</button>
+    <input type="text" id="searchInput" placeholder="按标题、关键词搜索论文…" onkeydown="if(event.key==='Enter')searchPapers()"  style="width:100%">
+    <button class="search-btn" onclick="searchPapers()">🔍 搜索</button>
   </div>
 
   <div class="nav-right">
-    <a href="./index.html" class="nav-link active"><i class="fas fa-scroll"></i> Latest</a>
-    <a href="./list.html" class="nav-link"><i class="fas fa-archive"></i> Archive</a>
+    <a href="./index.html" class="nav-link active"><i class="fas fa-scroll"></i> 最新报告</a>
+    <a href="./list.html" class="nav-link"><i class="fas fa-archive"></i> 历史记录</a>
   </div>
 </nav>
 
@@ -267,8 +267,8 @@
         Based on arXiv · Auto-generated with GPT-5.4 · Powered by zeabur.app
       </p>
       <div class="hero-stats">
-        <div class="hero-stat"><div class="n" id="todayCount">—</div><div class="l">papers today</div></div>
-        <div class="hero-stat"><div class="n" id="totalCount">—</div><div class="l">reports archived</div></div>
+        <div class="hero-stat"><div class="n" id="todayCount">—</div><div class="l">今日论文</div></div>
+        <div class="hero-stat"><div class="n" id="totalCount">—</div><div class="l">历史报告</div></div>
       </div>
     </div>
     <div class="hero-right">
@@ -287,7 +287,7 @@
 <!-- ── Filter tabs ─────────────────────────────────────────────────────────── -->
 <div class="filter-bar">
   <div class="filter-tabs">
-    <button class="filter-tab active" onclick="selectTab(this, 0)">All Reports <span class="count" id="tabCount">—</span></button>
+    <button class="filter-tab active" onclick="selectTab(this, 0)">全部报告 <span class="count" id="tabCount">—</span></button>
     <button class="filter-tab" onclick="selectTab(this, 1)">2026</button>
     <button class="filter-tab" onclick="selectTab(this, 2)">2025</button>
   </div>
@@ -298,7 +298,7 @@
   <div class="content-frame">
     <div class="frame-loading" id="loading">
       <div class="spinner"></div>
-      <p>Loading latest report…</p>
+      <p>正在加载最新报告…</p>
     </div>
     <iframe id="reportFrame" style="display:none" onload="frameLoaded()"></iframe>
   </div>
@@ -310,8 +310,8 @@
     Generated automatically &nbsp;·&nbsp; Audio/Speech AI Daily &nbsp;·&nbsp; arXiv + GPT-5.4
   </span>
   <div class="footer-right">
-    <a href="./index.html">Latest</a>
-    <a href="./list.html">Archive</a>
+    <a href="./index.html">最新报告</a>
+    <a href="./list.html">历史记录</a>
     <a href="https://github.com/Moriiikdt/paper_daily" target="_blank">GitHub</a>
   </div>
 </footer>
@@ -350,11 +350,11 @@
         document.getElementById('reportFrame').src = './daily_html/' + files[0];
       } else {
         document.getElementById('loading').innerHTML =
-          '<div style="text-align:center;padding:3rem"><div style="font-size:2rem;margin-bottom:.5rem">📭</div><h3>No reports yet</h3><p style="color:var(--muted);margin-top:.5rem">Reports will appear after the first daily run at 01:00 UTC.</p></div>';
+          '<div style="text-align:center;padding:3rem"><div style="font-size:2rem;margin-bottom:.5rem">📭</div><h3>No reports yet</h3><p style="color:var(--muted);margin-top:.5rem">报告将在每日 01:00 UTC 自动生成</p></div>';
       }
     } catch(e) {
       document.getElementById('loading').innerHTML =
-        '<div style="text-align:center;padding:3rem"><div style="font-size:2rem;margin-bottom:.5rem">⚠️</div><p style="color:var(--muted)">Failed to load. <a href="list.html">View archive</a>.</p></div>';
+        '<div style="text-align:center;padding:3rem"><div style="font-size:2rem;margin-bottom:.5rem">⚠️</div><p style="color:var(--muted)">加载失败 <a href="list.html">查看历史记录</a></p></div>';
     }
   }
 

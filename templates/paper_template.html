@@ -228,6 +228,21 @@
             font-size:.75rem;color:#8a8078;font-style:italic;
             white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:380px;
         }
+        /* Category chip */
+        .cat-chip{
+            display:inline-flex;align-items:center;gap:.25rem;
+            font-size:.7rem;font-weight:700;
+            padding:.18rem .6rem;border-radius:100px;
+            white-space:nowrap;margin-right:.3rem;
+        }
+        .cat-AudioLLM{background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe}
+        .cat-SpeechSynthesis{background:#f0fdf4;color:#059669;border:1px solid #a7f3d0}
+        .cat-Omni{background:#fef3c7;color:#d97706;border:1px solid #fde68a}
+        .cat-Multimodal{background:#fdf4ff;color:#7c3aed;border:1px solid #e9d5ff}
+        .cat-AudioPerception{background:#fff1f2;color:#e11d48;border:1px solid #fecdd3}
+        .cat-SpeechRecognition{background:#ecfeff;color:#0891b2;border:1px solid #a5f3fc}
+        .cat-Other{background:#f5f3f0;color:#8a8078;border:1px solid #e8e3dc}
+
 
         /* Empty state */
         .empty-state{text-align:center;padding:4rem 2rem}
@@ -267,7 +282,6 @@
         </p>
         <div class="report-stats">
             <div class="stat"><div class="n">{{ papers|length }}</div><div class="l">papers today</div></div>
-            <div class="stat"><div class="n">10</div><div class="l">{{ prev_year }}–{{ curr_year }} top cited</div></div>
         </div>
         <div class="report-meta">
             <span><i class="far fa-calendar"></i> {{ report_date.strftime('%Y-%m-%d') }}</span>
@@ -279,70 +293,7 @@
 <!-- ── Main Content ───────────────────────────────────────────────────────── -->
 <div class="container">
 
-{# ── Top 10 Most Cited ──────────────────────────────────────────────────── #}
-{% if top_cited_papers %}
-<div class="section-hdr">
-    <h2><i class="fas fa-fire" style="color:#d97706"></i> Top 10 Most Cited ({{ prev_year }}–{{ curr_year }})</h2>
-    <div class="line"></div>
-</div>
-
-<div class="top10-card">
-    <div class="top10-header">
-        <div class="top10-title">
-            <i class="fas fa-trophy" style="color:#fbbf24;font-size:.9rem"></i>
-            <h2>Most Cited Papers</h2>
-        </div>
-        <span class="year-chip">{{ prev_year }}–{{ curr_year }}</span>
-    </div>
-
-    {% if top_cited_papers[0] is mapping %}
-    <table class="top10-table">
-        <thead>
-            <tr>
-                <th style="width:44px">#</th>
-                <th>Title &amp; Summary</th>
-                <th style="width:130px">Authors</th>
-                <th style="width:50px">Year</th>
-                <th style="width:90px">Citations</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for paper in top_cited_papers %}
-        <tr>
-            <td>
-                <span class="rank-circle {% if paper.rank==1 %}rank-1{% elif paper.rank==2 %}rank-2{% elif paper.rank==3 %}rank-3{% elif paper.rank<=5 %}rank-4{% else %}rank-other{% endif %}">
-                    {{ paper.rank }}
-                </span>
-            </td>
-            <td>
-                <div class="top-title-text">
-                    <a href="{{ paper.url if paper.url else '#' }}" target="_blank">{{ paper.title }}</a>
-                </div>
-                {% if paper.summary %}
-                <div class="top-summary">{{ paper.summary[:150] }}{% if paper.summary|length > 150 %}…{% endif %}</div>
-                {% endif %}
-            </td>
-            <td class="top-authors">{{ paper.authors if paper.authors else '' }}</td>
-            <td class="top-venue">{{ paper.year if paper.year else '' }}</td>
-            <td>
-                {% if paper.citations %}
-                <span class="cite-pill">
-                    <i class="fas fa-quote-left" style="font-size:.6rem"></i>
-                    {{ paper.citations }}
-                </span>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <pre class="top-plain">{{ top_cited_papers[0] }}</pre>
-    {% endif %}
-</div>
-{% endif %}
-
-{# ── Today's Papers ────────────────────────────────────────────────────── #}
+{# ── Papers ───────────────────────────────────────────────────────── #}
 <div class="section-hdr">
     <h2><i class="fas fa-scroll" style="color:#1d4ed8"></i> Today's Papers <span style="font-size:.85rem;font-weight:400;color:#8a8078;margin-left:.5rem">({{ papers|length }})</span></h2>
     <div class="line"></div>
@@ -354,7 +305,12 @@
 
         <!-- Card header: number + title -->
         <div class="card-top">
-            <span class="card-num">#{{ loop.index }}</span>
+            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:.3rem;flex:1">
+                <span class="card-num">#{{ loop.index }}</span>
+                {% if paper.paper_category %}
+                <span class="cat-chip cat-{{ paper.paper_category }}">{{ paper.paper_category }}</span>
+                {% endif %}
+            </div>
             <h3 class="card-title">
                 <a href="{{ paper.url }}" target="_blank">{{ paper.title }}</a>
             </h3>

@@ -113,16 +113,18 @@ UNIFIED_TMPL = """You are an expert AI research paper reviewer.
 Research interests:
 1. Audio Large Language Models (Audio LLM, Audio Foundation Models)
 2. Audio/Speech Perception & Understanding
-3. Audio/Speech Reasoning
+3. Audio/Speech Reasoning (reasoning over audio, audio chain-of-thought, multimodal reasoning)
 4. Speech Synthesis (TTS, voice conversion, speech generation)
 5. Omni Models (any-domain unified multimodal models including audio)
+6. Multimodal Understanding & Reasoning (audio+vision+text joint understanding, audio visual grounding, audio reasoning)
 
 Evaluate each paper. Return a JSON array with one object per paper:
 
 {{
   "idx": 1,
   "relevant": true/false,
-  "tldr": "Chinese summary (must be Simplified Chinese, 2-3 sentences, start with 简要：或本文提出：)",
+  "category": "AudioLLM",
+  "tldr": "中文摘要（必须是简体中文，2-3句话）",
   "relevance_score": 8,
   "novelty_score": 7,
   "clarity_score": 8,
@@ -130,12 +132,21 @@ Evaluate each paper. Return a JSON array with one object per paper:
   "overall_priority_score": 8
 }}
 
+CATEGORY options (pick ONE):
+- "AudioLLM": Audio LLM, Audio Foundation Models, audio language model
+- "AudioPerception": Audio/speech perception, understanding, recognition
+- "AudioReasoning": Audio reasoning, audio chain-of-thought, multimodal reasoning
+- "SpeechSynthesis": TTS, voice conversion, speech generation
+- "Omni": Omni models, unified multimodal, any-modality model
+- "Multimodal": Multimodal understanding & reasoning (audio+vision+text joint)
+- "SpeechRecognition": ASR, speech-to-text
+- "Other": Does not fit the above categories
+
 IMPORTANT:
-- "relevant" MUST be true only if the paper clearly matches at least one research interest above
-- "tldr" MUST be in Simplified Chinese (简体中文) — write it yourself, do not copy from the abstract
-- Only set relevant=true for papers that clearly match the topics
-- For irrelevant papers, still output the JSON but set relevant=false and tldr=""
-- Output EXACTLY one JSON object per paper below, no markdown fences
+- "relevant" MUST be true only if the paper clearly matches at least one research interest
+- "tldr" MUST be in Simplified Chinese (简体中文) — write it yourself
+- "category" MUST be one of the category options above
+- For irrelevant papers, output JSON with relevant=false and tldr=""
 
 Papers:
 {papers_block}
@@ -221,15 +232,17 @@ def evaluate_papers(papers: list) -> list:
             continue
 
         p["tldr"]                  = tldr
+        p["paper_category"]        = info.get("category", "Other")
         p["relevance_score"]       = info.get("relevance_score", 5)
-        p["novelty_score"]         = info.get("novelty_score", 5)
-        p["clarity_score"]         = info.get("clarity_score", 5)
-        p["impact_score"]          = info.get("impact_score", 5)
+        p["novelty_score"]          = info.get("novelty_score", 5)
+        p["clarity_score"]          = info.get("clarity_score", 5)
+        p["impact_score"]           = info.get("impact_score", 5)
         p["overall_priority_score"] = info.get("overall_priority_score", 5)
 
         has_zh = any('\u4e00' <= c <= '\u9fff' for c in tldr)
         zh_mark = "ZH" if has_zh else "EN"
-        log.info(f"  [{i+1}/{len(papers)}] STAR{ p['overall_priority_score']}/10 [{zh_mark}] {p['title'][:45]}")
+        cat     = p.get("paper_category", "?")
+        log.info(f"  [{i+1}/{len(papers)}] STAR{p['overall_priority_score']}/10 [{zh_mark}] [{cat}] {p['title'][:40]}")
         rated.append(p)
 
     log.info(f"Relevant: {len(rated)}/{len(papers)} papers")
@@ -299,7 +312,7 @@ def cleanup(directory: str, days: int):
 
 # ── HTML Generation ─────────────────────────────────────────────────────────
 
-def generate_html(date_str: str, papers: list, top_cited: list):
+def generate_html(date_str: str, papers: list):
     try:
         from jinja2 import Environment, FileSystemLoader
     except ImportError:
@@ -316,14 +329,10 @@ def generate_html(date_str: str, papers: list, top_cited: list):
         fmt   = date.today().strftime("%Y_%m_%d")
         title = "Audio/Speech AI Daily"
 
-    today_yr = date.today().year
     html = tmpl.render(
         papers=papers, title=title,
         report_date=rdate,
         generation_time=datetime.now(timezone.utc),
-        top_cited_papers=top_cited,
-        prev_year=today_yr - 1,
-        curr_year=today_yr,
     )
     out = os.path.join(HTML_DIR, f"{fmt}.html")
     os.makedirs(HTML_DIR, exist_ok=True)
@@ -365,10 +374,7 @@ def process(target_date: date, force: bool = False):
             json.dump(papers, f, indent=4, ensure_ascii=False)
         log.info(f"Saved {jpath} ({len(papers)} papers)")
 
-    is_today  = (target_date == date.today())
-    top_cited = get_top_cited() if is_today else []
-
-    generate_html(target_date.isoformat(), papers, top_cited)
+    generate_html(target_date.isoformat(), papers)
     if is_today:
         update_reports()
     return papers
